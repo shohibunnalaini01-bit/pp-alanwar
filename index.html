@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YASARBASE - LOGIN</title>
+    <link rel="icon" type="image/x-icon" href="Foto/logo.png">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="all.min.css">
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- SweetAlert -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body>
+
+    <div class="login-card">
+        <div class="header">
+            <img src="Foto/logo.png" alt="Logo" class="logo">
+            <h1>PONDOK PESANTREN<br>AL ANWAR</h1>
+            <p>Patereman Modung Bangkalan</p>
+        </div>
+
+        <form id="loginForm">
+
+            <!-- Username -->
+            <div class="input-group">
+                <span class="icon">
+                    <i class="fa-solid fa-user"></i>
+                </span>
+
+                <input
+                    type="text"
+                    id="username"
+                    placeholder="Username"
+                    required
+                >
+            </div>
+
+            <!-- Password -->
+            <div class="input-group pass-container">
+
+                <span class="icon">
+                    <i class="fa-solid fa-lock"></i>
+                </span>
+
+                <input
+                    type="password"
+                    id="pass"
+                    placeholder="Password"
+                    required
+                >
+
+                <div class="toggle-password" onclick="togglePass()">
+                    <i id="eyeIcon" class="fa-solid fa-eye-slash"></i>
+                </div>
+            </div>
+
+            <!-- Info -->
+            <p id="pesan"></p>
+
+            <!-- Button -->
+            <button
+                type="button"
+                class="btn-login"
+                onclick="masuk()"
+            >
+                <i class="fa-solid fa-right-to-bracket"></i>
+                Masuk
+            </button>
+
+        </form>
+    </div>
+
+    <!-- JS -->
+    <script src="script.js"></script>
+
+</body>
+</html>

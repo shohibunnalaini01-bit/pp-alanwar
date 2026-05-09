@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>YASARBASE</title>
+    <link rel="icon" type="image/x-icon" href="Foto/logo.png">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="all.min.css" />
+    <link rel="stylesheet" href="style-dashboard.css" />
+
+    <!-- SweetAlert -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+<!-- Overlay untuk Sidebar Mode HP (Wajib ada di luar main-container) -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<div class="main-container">
+
+    <!-- ======================================================
+         SIDEBAR
+    ====================================================== -->
+    <nav class="sidebar">
+
+        <div class="sidebar-brand">
+            <img src="Foto/logo.png" alt="Logo PP. Al Anwar" class="logo-kecil" />
+            <h3>PP. AL ANWAR</h3>
+            <h4>Patereman Modung Bangkalan</h4>
+        </div>
+
+        <ul class="nav-menu">
+
+            <!-- Dashboard -->
+            <li>
+                <a href="#" onclick="showPage('ringkasan', this)" class="active">
+                    <i class="fas fa-home" aria-hidden="true"></i> Dashboard
+                </a>
+            </li>
+
+            <!-- MASTER DATA -->
+            <li class="menu-label">MASTER DATA</li>
+
+            <li>
+                <a href="#" onclick="showPage('murid', this)">
+                    <i class="fas fa-user-graduate" aria-hidden="true"></i> Data Murid
+                </a>
+            </li>
+
+            <!-- KESANTRIAN -->
+            <li class="menu-label">KESANTRIAN</li>
+
+            <li>
+                <a href="#" onclick="showPage('kelas', this)">
+                    <i class="fas fa-school" aria-hidden="true"></i> Kelas
+                </a>
+            </li>
+
+            <li>
+                <a href="#" onclick="showPage('kamar', this)">
+                    <i class="fas fa-bed" aria-hidden="true"></i> Kamar
+                </a>
+            </li>
+
+            <!-- KEDISIPLINAN -->
+            <li class="menu-label">KEDISIPLINAN</li>
+
+            <li>
+                <a href="#" onclick="showPage('perizinan', this)">
+                    <i class="fas fa-file-signature" aria-hidden="true"></i> Perizinan
+                </a>
+            </li>
+
+            <li>
+                <a href="#" onclick="showPage('pelanggaran', this)">
+                    <i class="fas fa-gavel" aria-hidden="true"></i> Pelanggaran
+                </a>
+            </li>
+
+        </ul>
+
+        <div class="sidebar-footer">
+            <button onclick="logout()">
+                <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Keluar
+            </button>
+        </div>
+
+    </nav>
+
+    <!-- ======================================================
+         CONTENT AREA
+    ====================================================== -->
+    <main class="content">
+
+        <!-- ======================================================
+             PAGE : RINGKASAN
+        ====================================================== -->
+        <section id="page-ringkasan" class="page active">
+
+            <header>
+                <!-- Tombol Burger Mode HP -->
+                <button class="btn-toggle-sidebar" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+
+                <h2>Ringkasan Data</h2>
+                <div class="user-profile">Halo, Admin</div>
+            </header>
+
+            <!-- Dashboard Cards -->
+            <div class="dashboard-cards">
+
+                <div class="card card-stats">
+                    <i class="fas fa-user-graduate" aria-hidden="true"></i>
+
+                    <div class="card-info">
+                        <h4>Total Murid</h4>
+                        <p id="count-murid">0 Santri</p>
+                    </div>
+                </div>
+
+                <!-- Sosmed -->
+                <div class="card card-sosmed">
+
+                    <h4>Hubungi Kami</h4>
+
+                    <div class="sosmed-icons">
+                        <a href="https://www.instagram.com/ponpesalanwarmadura" aria-label="Instagram"><i class="fab fa-instagram" aria-hidden="true"></i></a>
+                        <a href="https://www.tiktok.com/@mediaalanwar?is_from_webapp=1&sender_device=pc" aria-label="TikTok"><i class="fab fa-tiktok" aria-hidden="true"></i></a>
+
+                        <a href="https://youtube.com/@yasarofficial7241?si=LMuCime1R9PUmAeq" aria-label="YouTube">
+                            <i class="fab fa-youtube" aria-hidden="true"></i>
+                        </a>
+
+                        <a href="https://linktr.ee/alanwarmadura" aria-label="Website"><i class="fas fa-globe" aria-hidden="true"></i></a>
+
+                        <a href="https://wa.me/6282338902344" aria-label="WhatsApp">
+                            <i class="fab fa-whatsapp" aria-hidden="true"></i>
+                        </a>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-container">
+
+                <div class="chart-box">
+                    <h4>Statistik Murid per Kelas</h4>
+                    <canvas id="chartKelas"></canvas>
+                </div>
+
+                <div class="chart-box">
+                    <h4>Statistik Murid per Kamar</h4>
+                    <canvas id="chartKamar"></canvas>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ======================================================
+             PAGE : DATA MURID
+        ====================================================== -->
+        <section id="page-murid" class="page">
+
+            <header>
+                <!-- Tombol Burger Mode HP -->
+                <button class="btn-toggle-sidebar" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+
+                <h2>Data Murid</h2>
+
+                <button class="btn-tambah" onclick="toggleModal(true)">
+                    <i class="fas fa-plus" aria-hidden="true"></i> Tambah Murid
+                </button>
+            </header>
+
+            <!-- Search -->
+            <div class="search-box">
+                <i class="fas fa-search" aria-hidden="true"></i>
+
+                <input
+                    type="text"
+                    id="inputCari"
+                    placeholder="Cari nama murid..."
+                    onkeyup="searchData()"
+                    aria-label="Cari nama murid"
+                />
+            </div>
+
+            <!-- Table -->
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>Nama Murid</th>
+                            <th>NIK</th>
+                            <th>Alamat (Desa)</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="list-murid">
+                        <!-- Data dari JS -->
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+        <!-- ======================================================
+             PAGE : KELAS
+        ====================================================== -->
+        <section id="page-kelas" class="page">
+
+            <header>
+                <!-- Tombol Burger Mode HP -->
+                <button class="btn-toggle-sidebar" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+
+                <h2>Manajemen Kelas</h2>
+
+                <button class="btn-tambah-master" onclick="tambahNamaKelasMaster()">
+                    <i class="fas fa-plus" aria-hidden="true"></i> Tambah Master Kelas
+                </button>
+            </header>
+
+            <!-- Filter -->
+            <div class="filter-box">
+
+                <label for="pilih-kelas-filter" class="sr-only">Pilih Kelas</label>
+                <select id="pilih-kelas-filter" onchange="loadPenghuniKelas()">
+                    <option value="">-- Pilih Kelas --</option>
+                </select>
+
+                <button class="btn-masukkan-murid" onclick="tambahMuridKeKelas()">
+                    <i class="fas fa-user-plus" aria-hidden="true"></i> Masukkan Murid
+                </button>
+
+            </div>
+
+            <!-- Table -->
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>Nama Murid</th>
+                            <th>NIK</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="body-tabel-kelas">
+                        <!-- Data JS -->
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+        <!-- ======================================================
+             PAGE : KAMAR
+        ====================================================== -->
+        <section id="page-kamar" class="page">
+
+            <header>
+                <!-- Tombol Burger Mode HP -->
+                <button class="btn-toggle-sidebar" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+
+                <h2>Manajemen Kamar</h2>
+
+                <button class="btn-tambah-master" onclick="tambahNamaKamarMaster()">
+                    <i class="fas fa-plus" aria-hidden="true"></i> Tambah Master Kamar
+                </button>
+            </header>
+
+            <!-- Filter -->
+            <div class="filter-box">
+
+                <label for="pilih-kamar-filter" class="sr-only">Pilih Kamar</label>
+                <select id="pilih-kamar-filter" onchange="loadPenghuniKamar()">
+                    <option value="">-- Pilih Kamar --</option>
+                </select>
+
+                <button class="btn-masukkan-murid" onclick="tambahMuridKeKamar()">
+                    <i class="fas fa-user-plus" aria-hidden="true"></i> Masukkan Murid
+                </button>
+
+            </div>
+
+            <!-- Table -->
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>Nama Murid</th>
+                            <th>NIK</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="body-tabel-kamar">
+                        <!-- Data JS -->
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+        <!-- ======================================================
+             PAGE : PERIZINAN
+        ====================================================== -->
+        <section id="page-perizinan" class="page">
+
+            <header>
+                <!-- Tombol Burger Mode HP -->
+                <button class="btn-toggle-sidebar" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+
+                <h2>Manajemen Perizinan Santri</h2>
+            </header>
+
+            <!-- Tab Navigation -->
+            <div class="izin-nav">
+
+                <button class="btn-tab active" onclick="bukaTabIzin('input', this)">
+                    Input Izin
+                </button>
+
+                <button class="btn-tab" onclick="bukaTabIzin('semua', this)">
+                    Semua Data
+                </button>
+
+                <button class="btn-tab" onclick="bukaTabIzin('pulang', this)">
+                    Sedang Pulang
+                </button>
+
+                <button class="btn-tab" onclick="bukaTabIzin('terlambat', this)">
+                    Terlambat
+                </button>
+
+            </div>
+
+            <!-- INPUT IZIN -->
+            <div id="tab-input" class="content-izin active">
+
+                <div class="card-form">
+
+                    <h3>Formulir Izin Keluar</h3>
+
+                    <div class="input-row">
+
+                        <div class="input-col">
+                            <label for="pilih-santri-izin">Cari Nama Santri</label>
+
+                            <select id="pilih-santri-izin" onchange="updateAlamatIzin()">
+                                <option value="">-- Pilih Santri --</option>
+                            </select>
+                        </div>
+
+                        <div class="input-col">
+                            <label for="alamat-izin-view">Alamat (Otomatis)</label>
+
+                            <input
+                                type="text"
+                                id="alamat-izin-view"
+                                readonly
+                                placeholder="Alamat akan muncul otomatis"
+                            />
+                        </div>
+
+                    </div>
+
+                    <div class="input-row">
+
+                        <div class="input-col">
+                            <label for="alasan-izin">Alasan Pulang</label>
+
+                            <input
+                                type="text"
+                                id="alasan-izin"
+                                placeholder="Contoh: Acara Keluarga"
+                            />
+                        </div>
+
+                        <div class="input-col">
+                            <label for="estimasi-hari">Estimasi (Hari)</label>
+
+                            <input
+                                type="number"
+                                id="estimasi-hari"
+                                placeholder="Contoh: 3"
+                                onkeyup="hitungTglKembali()"
+                            />
+                        </div>
+
+                    </div>
+
+                    <div class="input-row">
+
+                        <div class="input-col checkbox-area">
+                            <input
+                                type="checkbox"
+                                id="izin-sakit"
+                                onchange="toggleSakit()"
+                            />
+
+                            <label for="izin-sakit">
+                                Sakit (Sampai Sembuh)
+                            </label>
+                        </div>
+
+                        <div class="input-col">
+                            <label for="tgl-kembali-view">Tanggal Rencana Kembali (Jam 20.00)</label>
+
+                            <input
+                                type="text"
+                                id="tgl-kembali-view"
+                                readonly
+                                placeholder="Otomatis terisi"
+                            />
+                        </div>
+
+                    </div>
+
+                    <button class="btn-save-izin" onclick="simpanIzin()">
+                        <i class="fas fa-paper-plane" aria-hidden="true"></i>
+                        SIMPAN DATA IZIN
+                    </button>
+
+                </div>
+
+            </div>
+
+            <!-- DATA IZIN -->
+            <div id="tab-data" class="content-izin">
+
+                <div class="table-container">
+
+                    <table>
+
+                        <thead>
+                            <tr>
+                                <th>Nama Santri</th>
+                                <th>Alasan</th>
+                                <th>Estimasi Kembali</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="list-izin">
+                            <!-- Data JS -->
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ======================================================
+             PAGE : PELANGGARAN
+        ====================================================== -->
+        <section id="page-pelanggaran" class="page">
+
+            <header>
+                <!-- Tombol Burger Mode HP -->
+                <button class="btn-toggle-sidebar" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+
+                <h2>Kedisiplinan & Rekap Mingguan</h2>
+            </header>
+
+            <!-- Navigation -->
+            <div class="izin-nav" style="margin-bottom: 20px;">
+
+                <button class="btn-tab active" onclick="navDisiplin('kelas', this)">
+                    Per Kelas
+                </button>
+
+                <button class="btn-tab" onclick="navDisiplin('kamar', this)">
+                    Per Kamar
+                </button>
+
+                <button class="btn-tab" onclick="navDisiplin('rekap', this)">
+                    Rekap Mingguan
+                </button>
+
+                <button
+                    class="btn-tab"
+                    style="background:#e74c3c; color:white;"
+                    onclick="navDisiplin('berat', this)"
+                >
+                    Pelanggaran Berat
+                </button>
+
+            </div>
+
+            <!-- Dynamic Content -->
+            <div id="area-konten-disiplin">
+
+                <!-- Ranking -->
+                <div id="section-ranking">
+
+                    <div class="filter-box" style="margin-bottom: 20px;">
+
+                        <label for="filter-bulan-disiplin">Pilih Periode:</label>
+
+                        <select
+                            id="filter-bulan-disiplin"
+                            onchange="refreshDataDisiplin()"
+                            style="flex-grow:1; padding:10px; border-radius:8px;"
+                        >
+                            <option value="05-2026">Mei 2026</option>
+                            <option value="06-2026">Juni 2026</option>
+                        </select>
+
+                    </div>
+
+                    <div class="table-container">
+
+                        <table>
+                            <thead id="head-disiplin"></thead>
+                            <tbody id="body-disiplin"></tbody>
+                        </table>
+
+                    </div>
+
+                </div>
+
+                <!-- Pilih Kelas Rekap -->
+                <div id="section-pilih-kelas-rekap" style="display:none;">
+
+                    <div class="filter-box" style="margin-bottom:20px; gap:10px;">
+
+                        <label for="audit-bulan" class="sr-only">Pilih Bulan Audit</label>
+                        <select id="audit-bulan">
+                            <option value="05-2026">Mei 2026</option>
+                        </select>
+
+                        <label for="audit-minggu" class="sr-only">Pilih Minggu Audit</label>
+                        <select id="audit-minggu">
+                            <option value="1">Minggu 1</option>
+                            <option value="2">Minggu 2</option>
+                        </select>
+
+                    </div>
+
+                    <div id="list-tombol-kelas-rekap" class="dashboard-cards">
+                        <!-- Tombol kelas -->
+                    </div>
+
+                </div>
+
+                <!-- Form Massal -->
+                <div id="section-form-massal" style="display:none;">
+
+                    <header>
+                        <h3 id="judul-rekap-massal">Input Rekap</h3>
+
+                        <button class="btn-keluarkan" onclick="navDisiplin('rekap')">
+                            Batal
+                        </button>
+                    </header>
+
+                    <div class="table-container">
+
+                        <table>
+
+                            <thead>
+                                <tr>
+                                    <th>Nama Santri</th>
+                                    <th>Jama'ah</th>
+                                    <th>Gerak Batin</th>
+                                    <th>Sekolah</th>
+                                    <th>Sholat Sunnah</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="body-rekap-massal"></tbody>
+
+                        </table>
+
+                    </div>
+
+                    <button
+                        class="btn-save"
+                        style="margin-top:20px;"
+                        onclick="simpanRekapMassal()"
+                    >
+                        SIMPAN REKAP SATU KELAS
+                    </button>
+
+                </div>
+
+                <!-- Pelanggaran Berat -->
+                <div id="section-berat" style="display:none;">
+
+                    <div class="card-form">
+
+                        <h3>Input Pelanggaran Berat</h3>
+
+                        <label for="pilih-murid-berat" class="sr-only">Pilih Murid</label>
+                        <select
+                            id="pilih-murid-berat"
+                            style="width:100%; padding:10px; margin-bottom:10px;"
+                        ></select>
+
+                        <label for="nama-pelanggaran-berat" class="sr-only">Jenis Pelanggaran</label>
+                        <input
+                            type="text"
+                            id="nama-pelanggaran-berat"
+                            placeholder="Jenis Pelanggaran (Misal: Kabur)"
+                        />
+
+                        <label for="poin-berat" class="sr-only">Poin Pelanggaran</label>
+                        <input
+                            type="number"
+                            id="poin-berat"
+                            placeholder="Poin (Misal: 100)"
+                        />
+
+                        <button class="btn-save" onclick="simpanPelanggaranBerat()">
+                            SIMPAN PELANGGARAN
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+<!-- ======================================================
+     MODAL FORM MURID
+====================================================== -->
+<div id="modalMurid" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+
+    <div class="modal-content">
+
+        <div class="modal-header">
+
+            <h3 id="modal-title">Tambah Data Murid</h3>
+
+            <button type="button" class="close-modal" onclick="toggleModal(false)" aria-label="Tutup modal">
+                &times;
+            </button>
+
+        </div>
+
+        <form id="formMurid">
+
+            <div class="form-grid">
+
+                <!-- Data Pribadi -->
+                <div class="section">
+
+                    <p class="label-sec">Data Pribadi</p>
+
+                    <input
+                        type="text"
+                        id="nama_murid"
+                        placeholder="Nama Lengkap Murid"
+                        required
+                        aria-label="Nama Lengkap Murid"
+                    />
+
+                    <input
+                        type="text"
+                        id="nik_murid"
+                        placeholder="NIK Murid (16 Digit)"
+                        required
+                        aria-label="NIK Murid"
+                    />
+
+                    <input
+                        type="text"
+                        id="no_kk"
+                        placeholder="Nomor Kartu Keluarga"
+                        required
+                        aria-label="Nomor Kartu Keluarga"
+                    />
+
+                </div>
+
+                <!-- Data Orang Tua -->
+                <div class="section">
+
+                    <p class="label-sec">Data Orang Tua</p>
+
+                    <input type="text" id="nama_ayah" placeholder="Nama Ayah" aria-label="Nama Ayah" />
+                    <input type="text" id="nik_ayah" placeholder="NIK Ayah" aria-label="NIK Ayah" />
+                    <input type="text" id="nama_ibu" placeholder="Nama Ibu" aria-label="Nama Ibu" />
+                    <input type="text" id="nik_ibu" placeholder="NIK Ibu" aria-label="NIK Ibu" />
+
+                </div>
+
+                <!-- Alamat -->
+                <div class="section full">
+
+                    <p class="label-sec">Alamat Lengkap</p>
+
+                    <div class="row">
+                        <input type="text" id="dusun" placeholder="Dusun / Jl." aria-label="Dusun atau Jalan" />
+                        <input type="text" id="desa" placeholder="Desa" aria-label="Desa" />
+                    </div>
+
+                    <div class="row">
+                        <input type="text" id="kecamatan" placeholder="Kecamatan" aria-label="Kecamatan" />
+                        <input type="text" id="kabupaten" placeholder="Kabupaten" aria-label="Kabupaten" />
+                        <input type="text" id="provinsi" placeholder="Provinsi" aria-label="Provinsi" />
+                    </div>
+
+                </div>
+
+            </div>
+
+            <button type="submit" class="btn-save">
+                SIMPAN DATA
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!-- JS -->
+<script src="script-dashboard.js"></script>
+
+</body>
+</html>

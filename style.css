@@ -1,0 +1,142 @@
+/* 1. VARIABEL & RESET */
+:root {
+    --hijau-utama: #00703c;
+    --hijau-gelap: #004d2a;
+    --kuning-aksen: #ffcc00;
+    --putih: #ffffff;
+    --input-bg: #f9f9f9;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* 2. BODY / BACKGROUND */
+body {
+    background: linear-gradient(135deg, var(--hijau-utama) 0%, var(--hijau-gelap) 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* 3. CARD LOGIN */
+.login-card {
+    background: var(--putih);
+    width: 90%;
+    max-width: 440px; /* Diperlebar sedikit agar lebih gagah */
+    padding: 45px 35px;
+    border-radius: 20px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+    text-align: center;
+    border-top: 8px solid var(--kuning-aksen);
+}
+
+/* 4. HEADER (Logo & Teks) */
+.header img.logo {
+    width: 90px;
+    margin-bottom: 10px;
+}
+
+.header h1 {
+    font-size: 1.5rem;
+    color: var(--hijau-utama);
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 5px;
+}
+
+.header p {
+    font-size: 1.1rem; /* Ukuran font diperbesar */
+    color: #444; /* Warna sedikit lebih gelap agar tegas */
+    margin-bottom: 35px;
+    font-weight: 500; /* Membuat tulisan lebih tebal */
+    letter-spacing: 0.5px;
+}
+
+/* 5. INPUT GROUP */
+.input-group {
+    position: relative;
+    margin-bottom: 15px;
+}
+
+/* Ikon Kanan (User/Lock) */
+.input-group i.fa-user, 
+.input-group i.fa-lock {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--hijau-utama);
+    font-size: 1.1rem;
+}
+
+.input-group input {
+    width: 100%;
+    height: 55px;
+    padding: 0 50px 0 45px; /* Ruang kiri untuk ikon, kanan untuk mata */
+    border: 2px solid #eee;
+    border-radius: 12px;
+    background-color: var(--input-bg);
+    font-size: 1rem;
+    transition: 0.3s ease;
+}
+
+.input-group input:focus {
+    border-color: var(--hijau-utama);
+    background-color: #fff;
+    outline: none;
+    box-shadow: 0 0 10px rgba(0, 112, 60, 0.1);
+}
+
+/* 6. SHOW PASSWORD ICON */
+.toggle-password {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #999;
+    padding: 5px;
+    transition: 0.3s;
+}
+
+.toggle-password:hover {
+    color: var(--hijau-utama);
+}
+
+/* 7. BUTTON MASUK */
+button {
+    width: 100%;
+    height: 55px;
+    background-color: var(--hijau-utama);
+    color: var(--putih);
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+button:hover {
+    background-color: #005a30;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 112, 60, 0.2);
+}
+
+/* 8. PESAN INFO */
+#pesan {
+    margin-top: 15px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    min-height: 20px;
+}

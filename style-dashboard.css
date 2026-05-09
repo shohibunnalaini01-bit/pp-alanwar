@@ -1,0 +1,706 @@
+/* 1. VARIABEL WARNA AL ANWAR */
+:root {
+    --hijau-tua: #00703c;
+    --hijau-muda: #008f4c;
+    --kuning: #ffcc00;
+    --putih: #ffffff;
+    --bg-abu: #f4f7f6;
+    --teks-gelap: #333;
+    --merah: #c0392b;
+    --merah-hover: #e74c3c;
+    --bayangan: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+/* 2. RESET DASAR */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--bg-abu);
+    color: var(--teks-gelap);
+}
+
+/* 3. LAYOUT UTAMA */
+.main-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* 4. SIDEBAR STYLE */
+.sidebar {
+    width: 260px;
+    height: 100vh;
+    background: var(--hijau-tua);
+    color: var(--putih);
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    transition: transform 0.3s ease; /* Animasi untuk mode HP */
+    z-index: 1000;
+}
+
+.sidebar-brand {
+    padding: 30px 15px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.logo-kecil {
+    width: 70px;
+    height: auto;
+    margin-bottom: 10px;
+}
+
+.sidebar-brand h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+
+.sidebar-brand h4 {
+    font-size: 0.8rem;
+    color: var(--kuning);
+    font-weight: 400;
+}
+
+/* MENU SIDEBAR */
+.nav-menu {
+    list-style: none;
+    padding: 20px 0;
+    flex-grow: 1;
+}
+
+.menu-label {
+    padding: 15px 25px 5px;
+    font-size: 0.75rem;
+    color: var(--kuning);
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.nav-menu li a {
+    display: flex;
+    align-items: center;
+    padding: 12px 25px;
+    color: #e0e0e0;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+.nav-menu li a i {
+    margin-right: 15px;
+    width: 20px;
+    text-align: center;
+}
+
+.nav-menu li a:hover, .nav-menu li a.active {
+    background: rgba(255,255,255,0.1);
+    color: var(--putih);
+    border-left: 4px solid var(--kuning);
+}
+
+.sidebar-footer {
+    padding: 20px;
+}
+
+.sidebar-footer button {
+    width: 100%;
+    padding: 12px;
+    background: var(--merah);
+    border: none;
+    color: var(--putih);
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.sidebar-footer button:hover {
+    background: var(--merah-hover);
+}
+
+/* 5. CONTENT AREA STYLE */
+.content {
+    margin-left: 260px;
+    padding: 30px;
+    width: calc(100% - 260px);
+    flex: 1;
+}
+
+/* Tombol Hamburger (Muncul di HP saja) */
+.btn-toggle-sidebar {
+    display: none;
+    background: var(--hijau-tua);
+    color: var(--putih);
+    border: none;
+    font-size: 1.5rem;
+    padding: 5px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-right: 15px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.page {
+    display: none;
+}
+
+.page.active {
+    display: block;
+}
+
+/* 6. DASHBOARD CARDS & KELAS CARDS */
+.dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.card {
+    background: var(--putih);
+    padding: 25px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    box-shadow: var(--bayangan);
+}
+
+.card i {
+    font-size: 2.5rem;
+    color: var(--hijau-tua);
+    margin-right: 20px;
+}
+
+.card-stats p {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--teks-gelap);
+}
+
+/* Card Sosmed */
+.card-sosmed {
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.card-sosmed h4 {
+    margin-bottom: 20px;
+    color: var(--teks-gelap);
+    font-size: 1.1rem;
+    font-weight: 700;
+    width: 100%;
+    text-align: center;
+}
+
+.sosmed-icons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    width: 100%;
+}
+
+.sosmed-icons a {
+    text-decoration: none;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f0f7f4;
+    border-radius: 10px;
+    color: var(--hijau-tua);
+    font-size: 1.3rem;
+    transition: 0.3s;
+}
+
+.sosmed-icons a:hover {
+    color: var(--kuning);
+    transform: translateY(-5px);
+}
+
+/* Card Kelas (Rekap) */
+.card-kelas {
+    background: var(--putih);
+    padding: 25px;
+    border-radius: 15px;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.3s;
+    border: 2px solid transparent;
+    box-shadow: var(--bayangan);
+}
+
+.card-kelas:hover {
+    border-color: var(--hijau-tua);
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 112, 60, 0.1);
+}
+
+.card-kelas i {
+    font-size: 2.5rem;
+    color: var(--hijau-tua);
+    margin-bottom: 15px;
+}
+
+.card-kelas h4 {
+    font-size: 1.2rem;
+    color: var(--teks-gelap);
+    margin-bottom: 5px;
+}
+
+.card-kelas p {
+    font-size: 0.85rem;
+    color: #888;
+}
+
+/* 7. CHARTS */
+.charts-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.chart-box {
+    background: var(--putih);
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: var(--bayangan);
+    height: 350px;
+}
+
+.chart-box h4 {
+    margin-bottom: 20px;
+    color: var(--hijau-tua);
+    font-size: 1rem;
+}
+
+/* 8. TABLE & SEARCH */
+.search-box {
+    position: relative;
+    margin: 20px 0;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 12px 12px 12px 45px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    outline: none;
+}
+
+.search-box i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+}
+
+.table-container {
+    background: var(--putih);
+    border-radius: 15px;
+    overflow-x: auto; /* Agar tabel bisa scroll di HP */
+    box-shadow: var(--bayangan);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px; /* Mencegah tabel penyok di HP */
+}
+
+th, td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+th {
+    background: var(--hijau-tua);
+    color: var(--putih);
+}
+
+/* 9. KOMPONEN TOMBOL */
+.btn-tambah, .btn-tambah-master {
+    background-color: var(--hijau-tua);
+    color: var(--putih);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: 0.3s;
+    box-shadow: 0 4px 6px rgba(0, 112, 60, 0.2);
+}
+
+.btn-tambah:hover, .btn-tambah-master:hover {
+    background-color: var(--hijau-muda);
+    transform: translateY(-2px);
+}
+
+.btn-masukkan-murid {
+    height: 45px;
+    background-color: var(--kuning);
+    color: var(--hijau-tua);
+    padding: 0 25px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: 0.3s;
+}
+
+.btn-masukkan-murid:hover {
+    filter: brightness(0.9);
+    transform: scale(1.02);
+}
+
+.btn-keluarkan {
+    color: var(--merah-hover);
+    border: 1.5px solid var(--merah-hover);
+    background: transparent;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-keluarkan:hover {
+    background: var(--merah-hover);
+    color: var(--putih);
+}
+
+.btn-save, .btn-save-izin {
+    background: var(--hijau-tua);
+    color: var(--putih);
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: 0.3s;
+}
+
+.btn-save:hover, .btn-save-izin:hover {
+    background: var(--hijau-muda);
+}
+
+/* 10. FILTER & DROPDOWN */
+.filter-box {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: var(--putih);
+    padding: 15px 20px;
+    border-radius: 12px;
+    box-shadow: var(--bayangan);
+    margin-bottom: 25px;
+    width: fit-content;
+    flex-wrap: wrap; /* Agar turun ke bawah kalau layar sempit */
+}
+
+.filter-box select {
+    height: 45px;
+    min-width: 200px;
+    padding: 0 15px;
+    border: 1.5px solid #eee;
+    border-radius: 10px;
+    font-size: 1rem;
+    color: #444;
+    outline: none;
+    cursor: pointer;
+}
+
+.filter-box select:focus {
+    border-color: var(--hijau-tua);
+}
+
+/* 11. TAB NAVIGATION (Perizinan/Pelanggaran) */
+.izin-nav {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    background: var(--putih);
+    padding: 10px;
+    border-radius: 12px;
+    box-shadow: var(--bayangan);
+    flex-wrap: wrap; /* Wrap jika layar menyempit */
+}
+
+.btn-tab {
+    padding: 10px 20px;
+    border: none;
+    background: #f0f4f2;
+    color: var(--hijau-tua);
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+.btn-tab.active {
+    background: var(--hijau-tua);
+    color: var(--putih);
+}
+
+.content-izin { 
+    display: none; 
+}
+.content-izin.active { 
+    display: block; 
+}
+
+.badge-izin {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+.status-pulang { background: #e3f2fd; color: #1976d2; }
+.status-terlambat { background: #ffebee; color: #c62828; }
+
+/* 12. FORM & MODAL */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    overflow-y: auto; /* Modal bisa scroll jika form panjang */
+}
+
+.modal-content {
+    background: var(--putih);
+    margin: 3% auto;
+    padding: 30px;
+    width: 90%;
+    max-width: 800px;
+    border-radius: 20px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--kuning);
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.close-modal {
+    font-size: 2rem;
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.section.full {
+    grid-column: span 2;
+}
+
+.label-sec {
+    font-weight: bold;
+    color: var(--hijau-tua);
+    margin-bottom: 10px;
+    display: block;
+    border-left: 4px solid var(--kuning);
+    padding-left: 10px;
+}
+
+.row {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap; /* Responsive untuk form alamat */
+}
+
+input, .input-col select {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    outline: none;
+}
+
+input:focus, .input-col select:focus {
+    border-color: var(--hijau-muda);
+}
+
+.card-form {
+    background: var(--putih);
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: var(--bayangan);
+}
+
+.input-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 15px;
+}
+
+.input-col { 
+    flex: 1; 
+    display: flex; 
+    flex-direction: column; 
+}
+
+.input-col label { 
+    font-size: 0.85rem; 
+    font-weight: bold; 
+    margin-bottom: 5px; 
+    color: #555; 
+}
+
+.checkbox-area { 
+    flex-direction: row !important; 
+    align-items: center; 
+    gap: 10px; 
+    padding-top: 25px; 
+}
+
+/* 13. UTILITY (Screen Reader Only) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ==========================================
+    14. MODE RESPONSIVE (SMARTPHONE/TABLET)
+   ========================================== */
+
+/* Tablet & HP (Lebar kurang dari 768px) */
+@media (max-width: 768px) {
+    /* Sembunyikan sidebar ke kiri layar */
+    .sidebar {
+        transform: translateX(-100%);
+    }
+
+    /* Class tambahan untuk membuka sidebar (Dihandle lewat JS) */
+    .sidebar.open {
+        transform: translateX(0);
+    }
+
+    /* Overlay gelap saat sidebar terbuka di HP */
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 999;
+    }
+    .sidebar-overlay.active {
+        display: block;
+    }
+
+    /* Pindahkan konten ke kiri 0 */
+    .content {
+        margin-left: 0;
+        width: 100%;
+        padding: 20px 15px;
+    }
+
+    /* Tampilkan tombol Hamburger */
+    .btn-toggle-sidebar {
+        display: block;
+    }
+
+    /* Tumpuk Grid menjadi 1 Kolom */
+    .dashboard-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .charts-container {
+        grid-template-columns: 1fr;
+    }
+
+    /* Form jadi 1 kolom */
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .section.full {
+        grid-column: span 1; /* Override grid kolom 2 jadi 1 */
+    }
+
+    .input-row {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .filter-box {
+        width: 100%; /* Filter box memenuhi lebar layar */
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-box select {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .btn-masukkan-murid {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Tab navigasi menjadi scroll horizontal atau wrap */
+    .izin-nav {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 5px;
+    }
+    
+    .btn-tab {
+        white-space: nowrap;
+    }
+}
