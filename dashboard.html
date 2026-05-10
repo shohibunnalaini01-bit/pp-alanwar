@@ -4,25 +4,25 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>YASARBASE</title>
-    <link rel="icon" type="image/x-icon" href="Foto/logo.png">
+    <title>PP. Al Anwar Bangkalan</title>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <link rel="stylesheet" href="style-dashboard.css" />
 
     <!-- SweetAlert -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<!-- SheetJS untuk Export Excel -->
-<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- SheetJS untuk Export Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 </head>
 
 <body>
 
-<!-- Overlay untuk Sidebar Mode HP (Wajib ada di luar main-container) -->
+<!-- Overlay untuk Sidebar Mode HP -->
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
 <div class="main-container">
@@ -42,7 +42,7 @@
 
             <!-- Dashboard -->
             <li>
-                <a href="#" onclick="showPage('ringkasan', this)" class="active">
+                <a href="#" onclick="showPage('ringkasan', this)" data-page="ringkasan" class="active">
                     <i class="fas fa-home" aria-hidden="true"></i> Dashboard
                 </a>
             </li>
@@ -51,7 +51,7 @@
             <li class="menu-label">MASTER DATA</li>
 
             <li>
-                <a href="#" onclick="showPage('murid', this)">
+                <a href="#" onclick="showPage('murid', this)" data-page="murid">
                     <i class="fas fa-user-graduate" aria-hidden="true"></i> Data Murid
                 </a>
             </li>
@@ -60,13 +60,13 @@
             <li class="menu-label">KESANTRIAN</li>
 
             <li>
-                <a href="#" onclick="showPage('kelas', this)">
+                <a href="#" onclick="showPage('kelas', this)" data-page="kelas">
                     <i class="fas fa-school" aria-hidden="true"></i> Kelas
                 </a>
             </li>
 
             <li>
-                <a href="#" onclick="showPage('kamar', this)">
+                <a href="#" onclick="showPage('kamar', this)" data-page="kamar">
                     <i class="fas fa-bed" aria-hidden="true"></i> Kamar
                 </a>
             </li>
@@ -75,13 +75,13 @@
             <li class="menu-label">KEDISIPLINAN</li>
 
             <li>
-                <a href="#" onclick="showPage('perizinan', this)">
+                <a href="#" onclick="showPage('perizinan', this)" data-page="perizinan">
                     <i class="fas fa-file-signature" aria-hidden="true"></i> Perizinan
                 </a>
             </li>
 
             <li>
-                <a href="#" onclick="showPage('pelanggaran', this)">
+                <a href="#" onclick="showPage('pelanggaran', this)" data-page="pelanggaran">
                     <i class="fas fa-gavel" aria-hidden="true"></i> Pelanggaran
                 </a>
             </li>
@@ -107,7 +107,6 @@
         <section id="page-ringkasan" class="page active">
 
             <header>
-                <!-- Tombol Burger Mode HP -->
                 <button class="btn-toggle-sidebar" onclick="toggleSidebar()">
                     <i class="fas fa-bars"></i>
                 </button>
@@ -134,16 +133,16 @@
                     <h4>Hubungi Kami</h4>
 
                     <div class="sosmed-icons">
-                        <a href="https://www.instagram.com/ponpesalanwarmadura" aria-label="Instagram"><i class="fab fa-instagram" aria-hidden="true"></i></a>
-                        <a href="https://www.tiktok.com/@mediaalanwar?is_from_webapp=1&sender_device=pc" aria-label="TikTok"><i class="fab fa-tiktok" aria-hidden="true"></i></a>
+                        <a href="#" aria-label="Instagram"><i class="fab fa-instagram" aria-hidden="true"></i></a>
+                        <a href="#" aria-label="TikTok"><i class="fab fa-tiktok" aria-hidden="true"></i></a>
 
                         <a href="https://youtube.com/@yasarofficial7241?si=LMuCime1R9PUmAeq" aria-label="YouTube">
                             <i class="fab fa-youtube" aria-hidden="true"></i>
                         </a>
 
-                        <a href="https://linktr.ee/alanwarmadura" aria-label="Website"><i class="fas fa-globe" aria-hidden="true"></i></a>
+                        <a href="#" aria-label="Website"><i class="fas fa-globe" aria-hidden="true"></i></a>
 
-                        <a href="https://wa.me/6282338902344" aria-label="WhatsApp">
+                        <a href="https://wa.me" aria-label="WhatsApp">
                             <i class="fab fa-whatsapp" aria-hidden="true"></i>
                         </a>
                     </div>
@@ -175,16 +174,20 @@
         <section id="page-murid" class="page">
 
             <header>
-                <!-- Tombol Burger Mode HP -->
                 <button class="btn-toggle-sidebar" onclick="toggleSidebar()">
                     <i class="fas fa-bars"></i>
                 </button>
 
                 <h2>Data Murid</h2>
 
-                <button class="btn-tambah" onclick="toggleModal(true)">
-                    <i class="fas fa-plus" aria-hidden="true"></i> Tambah Murid
-                </button>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-tambah" onclick="toggleModal(true)">
+                        <i class="fas fa-plus" aria-hidden="true"></i> Tambah Murid
+                    </button>
+                    <button class="btn-tambah" style="background:#008f4c;" onclick="exportMuridExcel()">
+                        <i class="fas fa-file-excel" aria-hidden="true"></i> Export Excel
+                    </button>
+                </div>
             </header>
 
             <!-- Search -->
@@ -194,9 +197,9 @@
                 <input
                     type="text"
                     id="inputCari"
-                    placeholder="Cari nama murid..."
+                    placeholder="Cari nome murid..."
                     onkeyup="searchData()"
-                    aria-label="Cari nama murid"
+                    aria-label="Cari nome murid"
                 />
             </div>
 
@@ -230,7 +233,6 @@
         <section id="page-kelas" class="page">
 
             <header>
-                <!-- Tombol Burger Mode HP -->
                 <button class="btn-toggle-sidebar" onclick="toggleSidebar()">
                     <i class="fas fa-bars"></i>
                 </button>
@@ -285,14 +287,13 @@
         <section id="page-kamar" class="page">
 
             <header>
-                <!-- Tombol Burger Mode HP -->
                 <button class="btn-toggle-sidebar" onclick="toggleSidebar()">
                     <i class="fas fa-bars"></i>
                 </button>
 
                 <h2>Manajemen Kamar</h2>
 
-                <button class="btn-tambah-master" onclick="tambahNamaKamarMaster()">
+                <button class="btn-tambah-master" onclick="tambahNomeKamarMaster()">
                     <i class="fas fa-plus" aria-hidden="true"></i> Tambah Master Kamar
                 </button>
             </header>
@@ -340,7 +341,6 @@
         <section id="page-perizinan" class="page">
 
             <header>
-                <!-- Tombol Burger Mode HP -->
                 <button class="btn-toggle-sidebar" onclick="toggleSidebar()">
                     <i class="fas fa-bars"></i>
                 </button>
@@ -367,6 +367,10 @@
                     Terlambat
                 </button>
 
+                <button class="btn-tab" style="background:#008f4c; color:white;" onclick="exportIzinExcel()">
+                    <i class="fas fa-file-excel"></i> Export Excel
+                </button>
+
             </div>
 
             <!-- INPUT IZIN -->
@@ -379,17 +383,21 @@
                     <div class="input-row">
 
                         <div class="input-col">
-                            <label for="pilih-santri-izin">Cari Nama Santri</label>
+                            <label>Cari Nome Santri</label>
 
-                            <div class="input-col">
-    <label>Cari Nama Santri</label>
-    <input type="text" id="pilih-santri-izin-text" placeholder="Klik untuk mencari santri..." readonly onclick="pilihSantriIzin()" style="cursor:pointer; background:#f9f9f9;">
-    <input type="hidden" id="pilih-santri-izin-id">
-</div>
-<div class="input-col">
-    <label>Alamat (Otomatis)</label>
-    <input type="text" id="alamat-izin-view" readonly placeholder="Alamat akan muncul otomatis" />
-</div>
+                            <input 
+                                type="text" 
+                                id="pilih-santri-izin-text" 
+                                placeholder="Klik untuk mencari santri..." 
+                                readonly 
+                                onclick="pilihSantriIzin()" 
+                                style="cursor:pointer; background:#f9f9f9;"
+                            >
+                            <input type="hidden" id="pilih-santri-izin-id">
+                        </div>
+
+                        <div class="input-col">
+                            <label for="alamat-izin-view">Alamat (Otomatis)</label>
 
                             <input
                                 type="text"
@@ -497,7 +505,6 @@
         <section id="page-pelanggaran" class="page">
 
             <header>
-                <!-- Tombol Burger Mode HP -->
                 <button class="btn-toggle-sidebar" onclick="toggleSidebar()">
                     <i class="fas fa-bars"></i>
                 </button>
@@ -516,6 +523,10 @@
                     Per Kamar
                 </button>
 
+                <button class="btn-tab" onclick="navDisiplin('murid', this)">
+                    Per Murid
+                </button>
+
                 <button class="btn-tab" onclick="navDisiplin('rekap', this)">
                     Rekap Mingguan
                 </button>
@@ -526,6 +537,10 @@
                     onclick="navDisiplin('berat', this)"
                 >
                     Pelanggaran Berat
+                </button>
+
+                <button class="btn-tab" style="background:#008f4c; color:white;" onclick="exportPelanggaranExcel()">
+                    <i class="fas fa-file-excel"></i> Export Rekap
                 </button>
 
             </div>
@@ -604,10 +619,10 @@
                             <thead>
                                 <tr>
                                     <th>Nama Santri</th>
-                                    <th>Jama'ah</th>
-                                    <th>Gerak Batin</th>
-                                    <th>Sekolah</th>
-                                    <th>Sholat Sunnah</th>
+                                    <th>Tdk Jamaah</th>
+                                    <th>Tdk Batin</th>
+                                    <th>Tdk Sekolah</th>
+                                    <th>Tdk Sunnah</th>
                                 </tr>
                             </thead>
 
@@ -634,16 +649,21 @@
 
                         <h3>Input Pelanggaran Berat</h3>
 
-                        <label for="pilih-murid-berat" class="sr-only">Pilih Murid</label>
-                        <select
-                            id="pilih-murid-berat"
-                            style="width:100%; padding:10px; margin-bottom:10px;"
-                        ></select>
+                        <label class="sr-only">Pilih Murid</label>
+                        <input 
+                            type="text" 
+                            id="pilih-murid-berat-text" 
+                            placeholder="Klik untuk mencari murid..." 
+                            readonly 
+                            onclick="pilihMuridBerat()" 
+                            style="width:100%; padding:10px; margin-bottom:10px; cursor:pointer; background:#f9f9f9;"
+                        >
+                        <input type="hidden" id="pilih-murid-berat-id">
 
-                        <label for="nama-pelanggaran-berat" class="sr-only">Jenis Pelanggaran</label>
+                        <label for="nome-pelanggaran-berat" class="sr-only">Jenis Pelanggaran</label>
                         <input
                             type="text"
-                            id="nama-pelanggaran-berat"
+                            id="nome-pelanggaran-berat"
                             placeholder="Jenis Pelanggaran (Misal: Kabur)"
                         />
 
@@ -698,10 +718,10 @@
 
                     <input
                         type="text"
-                        id="nama_murid"
-                        placeholder="Nama Lengkap Murid"
+                        id="nome_murid"
+                        placeholder="Nome Lengkap Murid"
                         required
-                        aria-label="Nama Lengkap Murid"
+                        aria-label="Nome Lengkap Murid"
                     />
 
                     <input
@@ -727,9 +747,9 @@
 
                     <p class="label-sec">Data Orang Tua</p>
 
-                    <input type="text" id="nama_ayah" placeholder="Nama Ayah" aria-label="Nama Ayah" />
+                    <input type="text" id="nome_ayah" placeholder="Nome Ayah" aria-label="Nome Ayah" />
                     <input type="text" id="nik_ayah" placeholder="NIK Ayah" aria-label="NIK Ayah" />
-                    <input type="text" id="nama_ibu" placeholder="Nama Ibu" aria-label="Nama Ibu" />
+                    <input type="text" id="nome_ibu" placeholder="Nome Ibu" aria-label="Nome Ibu" />
                     <input type="text" id="nik_ibu" placeholder="NIK Ibu" aria-label="NIK Ibu" />
 
                 </div>
@@ -747,7 +767,7 @@
                     <div class="row">
                         <input type="text" id="kecamatan" placeholder="Kecamatan" aria-label="Kecamatan" />
                         <input type="text" id="kabupaten" placeholder="Kabupaten" aria-label="Kabupaten" />
-                        <input type="text" id="provinsi" placeholder="Provinsi" aria-label="Provinsi" />
+                        <input type="text" id="provinsi" placeholder="Província" aria-label="Provinsi" />
                     </div>
 
                 </div>
