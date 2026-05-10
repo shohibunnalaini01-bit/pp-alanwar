@@ -381,13 +381,15 @@
                         <div class="input-col">
                             <label for="pilih-santri-izin">Cari Nama Santri</label>
 
-                            <select id="pilih-santri-izin" onchange="updateAlamatIzin()">
-                                <option value="">-- Pilih Santri --</option>
-                            </select>
-                        </div>
-
-                        <div class="input-col">
-                            <label for="alamat-izin-view">Alamat (Otomatis)</label>
+                            <div class="input-col">
+    <label>Cari Nama Santri</label>
+    <input type="text" id="pilih-santri-izin-text" placeholder="Klik untuk mencari santri..." readonly onclick="pilihSantriIzin()" style="cursor:pointer; background:#f9f9f9;">
+    <input type="hidden" id="pilih-santri-izin-id">
+</div>
+<div class="input-col">
+    <label>Alamat (Otomatis)</label>
+    <input type="text" id="alamat-izin-view" readonly placeholder="Alamat akan muncul otomatis" />
+</div>
 
                             <input
                                 type="text"
