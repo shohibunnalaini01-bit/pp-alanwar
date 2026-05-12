@@ -1,3 +1,10 @@
+Baik, saya akan mengetik ulang **SELURUH kode JavaScript-nya**. 
+
+Untuk di **HTML, Anda TIDAK PERLU merubah apapun**. Karena di HTML sudah ada `onclick="pilihSantriIzin()"` dan `onclick="pilihMuridBerat()"`, saya akan memanfaatkan fungsi tersebut untuk memunculkan pop-up (SweetAlert2) yang berisi filter kelas terlebih dahulu.
+
+Silakan **hapus seluruh isi file `script-dashboard.js`** Anda, lalu *copy-paste* kode di bawah ini secara utuhan:
+
+```javascript
 /* =========================
    KONFIGURASI DASAR & ROLE
 ========================= */
@@ -51,75 +58,6 @@ function loadXLSX() {
 }
 
 /* =========================
-   HELPER: BUAT SEARCHABLE DROPDOWN (Versi Input Text)
-   (Disesuaikan dengan struktur HTML yang pakai input text & hidden)
-========================= */
-function attachSearchable(textId, hiddenId, placeholder, onSelectedCallback) {
-    const textEl = document.getElementById(textId);
-    const hiddenEl = document.getElementById(hiddenId);
-    if (!textEl || !hiddenEl) return null;
-
-    // Hapus atribut readonly dan onclick bawaan dari HTML agar bisa diketik
-    textEl.removeAttribute('readonly');
-    textEl.removeAttribute('onclick');
-    textEl.placeholder = placeholder || 'Ketik untuk mencari...';
-    textEl.autocomplete = 'off';
-
-    // Buat elemen dropdown list
-    const dropdownList = document.createElement('div');
-    dropdownList.style.cssText = 'position:absolute;top:100%;left:0;right:0;max-height:220px;overflow-y:auto;background:#fff;border:1px solid #ccc;border-top:none;z-index:9999;display:none;box-shadow:0 4px 6px rgba(0,0,0,0.1);';
-    
-    // Pastikan parent-nya punya position relative
-    textEl.parentElement.style.position = 'relative';
-    textEl.parentElement.appendChild(dropdownList);
-
-    let allItems = [];
-
-    function renderList(keyword) {
-        dropdownList.innerHTML = '';
-        const lowerKey = (keyword || '').toLowerCase();
-        const filtered = allItems.filter(item => item.label.toLowerCase().includes(lowerKey));
-        
-        if (filtered.length === 0) {
-            dropdownList.innerHTML = '<div style="padding:10px;color:#999;font-size:13px;">Santri tidak ditemukan</div>';
-        } else {
-            filtered.forEach(item => {
-                const div = document.createElement('div');
-                div.style.cssText = 'padding:10px 12px;cursor:pointer;font-size:14px;border-bottom:1px solid #f0f0f0;';
-                div.innerHTML = item.label;
-                div.addEventListener('mousedown', function(e) {
-                    e.preventDefault(); // Cegah blur sebelum klik terbaca
-                    textEl.value = item.label;
-                    hiddenEl.value = item.value;
-                    dropdownList.style.display = 'none';
-                    if (onSelectedCallback) onSelectedCallback(item);
-                });
-                div.addEventListener('mouseover', function() { this.style.backgroundColor = '#e8f5e9'; });
-                div.addEventListener('mouseout', function() { this.style.backgroundColor = ''; });
-                dropdownList.appendChild(div);
-            });
-        }
-        dropdownList.style.display = 'block';
-    }
-
-    textEl.addEventListener('focus', function() { renderList(this.value); });
-    textEl.addEventListener('input', function() { renderList(this.value); });
-    textEl.addEventListener('blur', function() { setTimeout(() => { dropdownList.style.display = 'none'; }, 150); });
-
-    return {
-        setItems: function(items) {
-            allItems = items;
-        },
-        clear: function() {
-            textEl.value = '';
-            hiddenEl.value = '';
-        },
-        getValue: function() { return hiddenEl.value; }
-    };
-}
-
-
-/* =========================
    1. NAVIGASI HALAMAN & HP
 ========================= */
 function showPage(pageId, element) {
@@ -137,7 +75,7 @@ function showPage(pageId, element) {
     else if (pageId === 'murid') loadDataMurid();
     else if (pageId === 'kelas') { refreshDropdownKelas(); loadPenghuniKelas(); }
     else if (pageId === 'kamar') { refreshDropdownKamar(); loadPenghuniKamar(); }
-    else if (pageId === 'perizinan') { refreshDropdownSantriIzin(); bukaTabIzin('input'); }
+    else if (pageId === 'perizinan') { bukaTabIzin('input'); }
     else if (pageId === 'pelanggaran') navDisiplin('kelas');
 
     if (window.innerWidth <= 768) toggleSidebar();
@@ -198,8 +136,6 @@ function searchData() {
 document.getElementById('formMurid').addEventListener('submit', async function(e) {
     e.preventDefault();
     Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-    
-    // Diperbaiki: Menyesuaikan ID dari HTML (nome_murid, bukan nama_murid)
     const payload = {
         nama_murid: document.getElementById('nome_murid').value, 
         nik_murid: document.getElementById('nik_murid').value,
@@ -409,10 +345,8 @@ async function tambahNamaKamarMaster() {
 }
 
 /* =========================
-   5. PERIZINAN (SEARCHABLE)
+   5. PERIZINAN (POPTUP FILTER KELAS)
 ========================= */
-let searchIzinObj = null;
-
 function bukaTabIzin(tabId, element) {
     document.querySelectorAll('.content-izin').forEach(c => c.classList.remove('active'));
     document.querySelectorAll('#page-perizinan .btn-tab').forEach(b => b.classList.remove('active'));
@@ -440,36 +374,63 @@ function toggleSakit() {
     hitungTglKembali();
 }
 
-async function refreshDropdownSantriIzin() {
-    const res = await fetch(BASE_URL + "?select=id,nama_murid,desa&order=nama_murid.asc", { headers: HEADERS_GET });
-    const data = await res.json();
-    window.listMuridIzin = data;
+// POIN 2: POP UP PILIH SANTRI IZIN (FILTER KELAS DULU)
+async function pilihSantriIzin() {
+    try {
+        const resKelas = await fetch(URL_KELAS, { headers: HEADERS_GET });
+        const dataKelas = await resKelas.json();
+        
+        const optionsKelas = {};
+        dataKelas.forEach(k => { optionsKelas[k.id] = k.nama_kelas; });
 
-    if (!searchIzinObj) {
-        searchIzinObj = attachSearchable('pilih-santri-izin-text', 'pilih-santri-izin-id', '🔍 Cari Nama Santri...', function(item) {
-            const alamatView = document.getElementById('alamat-izin-view');
-            if (alamatView) alamatView.value = item.data.desa || '';
+        const { value: idKelas } = await Swal.fire({
+            title: 'Pilih Kelas Terlebih Dahulu',
+            input: 'select',
+            inputOptions: optionsKelas,
+            inputPlaceholder: '-- Pilih Kelas --',
+            showCancelButton: true,
+            confirmButtonText: 'Lihat Santri',
+            confirmButtonColor: '#00703c'
         });
-    }
-    if (searchIzinObj) {
-        const items = data.map(m => ({
-            value: m.id,
-            label: `${m.nama_murid} — ${m.desa || '-'}`,
-            data: m
-        }));
-        searchIzinObj.setItems(items);
-    }
-}
 
-function updateAlamatIzin() {
-    const idMurid = searchIzinObj ? searchIzinObj.getValue() : '';
-    const viewAlamat = document.getElementById('alamat-izin-view');
-    const murid = window.listMuridIzin ? window.listMuridIzin.find(m => m.id == idMurid) : null;
-    if (viewAlamat) viewAlamat.value = murid ? murid.desa : "";
+        if (!idKelas) return;
+
+        const resMurid = await fetch(`${BASE_URL}?id_kelas=eq.${idKelas}&select=id,nama_murid,desa&order=nama_murid.asc`, { headers: HEADERS_GET });
+        const dataMurid = await resMurid.json();
+
+        if (dataMurid.length === 0) {
+            Swal.fire('Kosong', 'Tidak ada murid di kelas ini.', 'info');
+            return;
+        }
+
+        const optionsMurid = {};
+        dataMurid.forEach(m => { optionsMurid[m.id] = `${m.nama_murid} (${m.desa || '-'})`; });
+
+        const { value: idMurid } = await Swal.fire({
+            title: 'Pilih Santri',
+            input: 'select',
+            inputOptions: optionsMurid,
+            inputPlaceholder: '-- Pilih Santri --',
+            showCancelButton: true,
+            confirmButtonText: 'Pilih',
+            confirmButtonColor: '#00703c'
+        });
+
+        if (idMurid) {
+            const muridTerpilih = dataMurid.find(m => m.id == idMurid);
+            document.getElementById('pilih-santri-izin-text').value = muridTerpilih.nama_murid;
+            document.getElementById('pilih-santri-izin-id').value = muridTerpilih.id;
+            document.getElementById('alamat-izin-view').value = muridTerpilih.desa || '-';
+        }
+
+    } catch(e) {
+        console.error(e);
+        Swal.fire('Error', 'Gagal memuat data.', 'error');
+    }
 }
 
 async function simpanIzin() {
-    const idMurid = searchIzinObj ? searchIzinObj.getValue() : '';
+    const idMurid = document.getElementById('pilih-santri-izin-id').value;
     const alasan = document.getElementById('alasan-izin').value;
     const hari = document.getElementById('estimasi-hari').value;
     const isSakit = document.getElementById('izin-sakit').checked;
@@ -488,10 +449,12 @@ async function simpanIzin() {
         const res = await fetch(URL_IZIN, { method: 'POST', headers: HEADERS, body: JSON.stringify(payload) });
         if (res.ok) {
             Swal.fire('Berhasil!', 'Data perizinan disimpan.', 'success');
+            document.getElementById('pilih-santri-izin-text').value = '';
+            document.getElementById('pilih-santri-izin-id').value = '';
+            document.getElementById('alamat-izin-view').value = '';
             document.getElementById('alasan-izin').value = "";
             document.getElementById('estimasi-hari').value = "";
             document.getElementById('izin-sakit').checked = false; toggleSakit();
-            if (searchIzinObj) searchIzinObj.clear();
             bukaTabIzin('semua', document.querySelector('#page-perizinan .btn-tab:nth-child(2)'));
         }
     } catch (err) { console.error(err); }
@@ -545,8 +508,6 @@ async function perpanjangIzin(id) {
 /* =========================
    6. PELANGGARAN, REKAP & KETUA
 ========================= */
-let searchBeratObj = null;
-
 function navDisiplin(menu, element) {
     if (element) {
         document.querySelectorAll('#page-pelanggaran .btn-tab').forEach(btn => btn.classList.remove('active'));
@@ -558,7 +519,7 @@ function navDisiplin(menu, element) {
     document.getElementById('section-berat').style.display = 'none';
 
     if (menu === 'rekap') { document.getElementById('section-pilih-kelas-rekap').style.display = 'block'; tampilkanMenuTombolKelas(); }
-    else if (menu === 'berat') { document.getElementById('section-berat').style.display = 'block'; isiDropdownMuridBerat(); }
+    else if (menu === 'berat') { document.getElementById('section-berat').style.display = 'block'; }
     else { document.getElementById('section-ranking').style.display = 'block'; menuAktifDisiplin = menu; refreshDataDisiplin(); }
 }
 
@@ -620,29 +581,62 @@ async function refreshDataDisiplin() {
     } catch (e) { console.error(e); tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:red;">Gagal memuat data</td></tr>'; }
 }
 
-async function isiDropdownMuridBerat() {
+// POIN 2: POP UP PILIH SANTRI PELANGGARAN BERAT (FILTER KELAS DULU)
+async function pilihMuridBerat() {
     try {
-        const res = await fetch(`${BASE_URL}?select=id,nama_murid,desa&order=nama_murid.asc`, { headers: HEADERS_GET });
-        const data = await res.json();
+        const resKelas = await fetch(URL_KELAS, { headers: HEADERS_GET });
+        const dataKelas = await resKelas.json();
+        
+        const optionsKelas = {};
+        dataKelas.forEach(k => { optionsKelas[k.id] = k.nama_kelas; });
 
-        if (!searchBeratObj) {
-            searchBeratObj = attachSearchable('pilih-murid-berat-text', 'pilih-murid-berat-id', '🔍 Cari Nama Santri...', null);
+        const { value: idKelas } = await Swal.fire({
+            title: 'Pilih Kelas Terlebih Dahulu',
+            input: 'select',
+            inputOptions: optionsKelas,
+            inputPlaceholder: '-- Pilih Kelas --',
+            showCancelButton: true,
+            confirmButtonText: 'Lihat Santri',
+            confirmButtonColor: '#00703c'
+        });
+
+        if (!idKelas) return;
+
+        const resMurid = await fetch(`${BASE_URL}?id_kelas=eq.${idKelas}&select=id,nama_murid,desa&order=nama_murid.asc`, { headers: HEADERS_GET });
+        const dataMurid = await resMurid.json();
+
+        if (dataMurid.length === 0) {
+            Swal.fire('Kosong', 'Tidak ada murid di kelas ini.', 'info');
+            return;
         }
-        if (searchBeratObj) {
-            const items = data.map(m => ({
-                value: m.id,
-                label: `${m.nama_murid} — ${m.desa || '-'}`,
-                data: m
-            }));
-            searchBeratObj.setItems(items);
+
+        const optionsMurid = {};
+        dataMurid.forEach(m => { optionsMurid[m.id] = `${m.nama_murid} (${m.desa || '-'})`; });
+
+        const { value: idMurid } = await Swal.fire({
+            title: 'Pilih Santri',
+            input: 'select',
+            inputOptions: optionsMurid,
+            inputPlaceholder: '-- Pilih Santri --',
+            showCancelButton: true,
+            confirmButtonText: 'Pilih',
+            confirmButtonColor: '#00703c'
+        });
+
+        if (idMurid) {
+            const muridTerpilih = dataMurid.find(m => m.id == idMurid);
+            document.getElementById('pilih-murid-berat-text').value = muridTerpilih.nama_murid;
+            document.getElementById('pilih-murid-berat-id').value = muridTerpilih.id;
         }
-    } catch(e) { console.error(e); }
+
+    } catch(e) {
+        console.error(e);
+        Swal.fire('Error', 'Gagal memuat data.', 'error');
+    }
 }
 
 async function simpanPelanggaranBerat() {
-    const id_murid = searchBeratObj ? searchBeratObj.getValue() : '';
-    
-    // Diperbaiki: Menggunakan ID dari HTML (nome-pelanggaran-berat)
+    const id_murid = document.getElementById('pilih-murid-berat-id').value;
     const jenis_pelanggaran = document.getElementById('nome-pelanggaran-berat').value;
     const poin = document.getElementById('poin-berat').value;
     
@@ -654,9 +648,10 @@ async function simpanPelanggaranBerat() {
         });
         if (res.ok) {
             Swal.fire('Tercatat!', 'Pelanggaran berat berhasil disimpan.', 'success');
+            document.getElementById('pilih-murid-berat-text').value = '';
+            document.getElementById('pilih-murid-berat-id').value = '';
             document.getElementById('nome-pelanggaran-berat').value = '';
             document.getElementById('poin-berat').value = '';
-            if (searchBeratObj) searchBeratObj.clear();
             if (document.getElementById('section-ranking').style.display === 'block') refreshDataDisiplin();
         } else { const errData = await res.json(); console.error("Supabase Error:", errData); Swal.fire('Gagal', 'Cek kembali tipe data di Supabase Anda!', 'error'); }
     } catch(e) { Swal.fire('Error', 'Koneksi database gagal.', 'error'); }
@@ -755,15 +750,10 @@ async function inisialisasiGrafikKamar() {
 }
 
 /* =========================
-   8. EXPORT EXCEL (DIPERBAIKI)
+   8. EXPORT EXCEL (METODE JS MAPPING - AMAN)
 ========================= */
 async function exportToExcel(type) {
-    try {
-        await loadXLSX();
-    } catch(e) {
-        Swal.fire('Error', 'Gagal memuat library export Excel. Cek koneksi internet.', 'error');
-        return;
-    }
+    try { await loadXLSX(); } catch(e) { return Swal.fire('Error', 'Gagal memuat library Excel.', 'error'); }
 
     Swal.fire({ title: 'Mempersiapkan Data...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     let dataToExport = [];
@@ -771,59 +761,104 @@ async function exportToExcel(type) {
     let sheetName = "Data";
 
     try {
+        // Ambil semua data master terlebih dahulu untuk mapping
+        const [resMurid, resKelas, resKamar] = await Promise.all([
+            fetch(`${BASE_URL}?select=id,nama_murid,id_kelas,id_kamar,desa`, { headers: HEADERS_GET }),
+            fetch(URL_KELAS, { headers: HEADERS_GET }),
+            fetch(URL_KAMAR, { headers: HEADERS_GET })
+        ]);
+        const allMurid = await resMurid.json();
+        const allKelas = await resKelas.json();
+        const allKamar = await resKamar.json();
+
+        // Buat Lookup Map
+        const kelasMap = {};
+        allKelas.forEach(k => kelasMap[k.id] = k.nama_kelas);
+        const kamarMap = {};
+        allKamar.forEach(k => kamarMap[k.id] = k.nama_kamar);
+        const muridMap = {};
+        allMurid.forEach(m => muridMap[m.id] = m);
+
         if(type === 'murid') {
-            const res = await fetch(`${BASE_URL}?select=nama_murid,nik_murid,no_kk,nama_ayah,nama_ibu,desa,kecamatan,kabupaten,provinsi&order=nama_murid.asc`, { headers: HEADERS_GET });
-            dataToExport = await res.json();
-            filename = "Data_Seluruh_Murid.xlsx";
-            sheetName = "Murid";
+            allMurid.forEach(m => {
+                dataToExport.push({
+                    "Nama Murid": m.nama_murid, "NIK": m.nik_murid, "Desa": m.desa,
+                    "Kelas": kelasMap[m.id_kelas] || '-', "Kamar": kamarMap[m.id_kamar] || '-'
+                });
+            });
+            filename = "Data_Seluruh_Murid.xlsx"; sheetName = "Murid";
         }
         else if(type === 'pelanggaran_kamar' || type === 'pelanggaran_kelas') {
             const isKamar = type === 'pelanggaran_kamar';
-            const relName = isKamar ? 'kamar' : 'kelas';
-            const relId = isKamar ? 'id_kamar' : 'id_kelas';
-
+            
             const [resRingan, resBerat] = await Promise.all([
-                fetch(`${URL_REKAP}?select=bulan,minggu,jamaah,gerak_batin,sekolah,sholat_sunnah,murid!inner(nama_murid,${relId},${relName}!inner(nama_${relName}))`, { headers: HEADERS_GET }),
-                fetch(`${URL_PELANGGARAN}?select=jenis_pelanggaran,poin,tgl_kejadian,murid!inner(nama_murid,${relId},${relName}!inner(nama_${relName}))`, { headers: HEADERS_GET })
+                fetch(URL_REKAP, { headers: HEADERS_GET }),
+                fetch(URL_PELANGGARAN, { headers: HEADERS_GET })
             ]);
             const ringan = await resRingan.json();
             const berat = await resBerat.json();
 
-            ringan.forEach(r => dataToExport.push({
-                [`Nama ${isKamar ? 'Kamar' : 'Kelas'}`]: r.murid[relName]?.[`nama_${relName}`] || '-',
-                "Nama Murid": r.murid.nama_murid, "Bulan": r.bulan, "Minggu": r.minggu,
-                "Jamaah": r.jamaah, "Batin": r.gerak_batin, "Sekolah": r.sekolah, "Sunnah": r.sholat_sunnah,
-                "Kategori": "Ringan"
-            }));
-            berat.forEach(b => dataToExport.push({
-                [`Nama ${isKamar ? 'Kamar' : 'Kelas'}`]: b.murid[relName]?.[`nama_${relName}`] || '-',
-                "Nama Murid": b.murid.nama_murid, "Bulan": b.tgl_kejadian ? new Date(b.tgl_kejadian).getMonth()+1 : '-', "Minggu": "-",
-                "Jenis Pelanggaran": b.jenis_pelanggaran, "Poin": b.poin, "Kategori": "Berat"
-            }));
+            ringan.forEach(r => {
+                const murid = muridMap[r.id_murid];
+                if(!murid) return;
+                const grupNama = isKamar ? (kamarMap[murid.id_kamar] || '-') : (kelasMap[murid.id_kelas] || '-');
+                
+                // Filter: Jika export per kamar, skip yang tidak punya kamar. Begitu juga kelas.
+                if(isKamar && !murid.id_kamar) return;
+                if(!isKamar && !murid.id_kelas) return;
+
+                dataToExport.push({
+                    [`Nama ${isKamar ? 'Kamar' : 'Kelas'}`]: grupNama,
+                    "Nama Murid": murid.nama_murid, "Bulan": r.bulan, "Minggu": r.minggu,
+                    "Jamaah": r.jamaah, "Batin": r.gerak_batin, "Sekolah": r.sekolah, "Sunnah": r.sholat_sunnah,
+                    "Kategori": "Ringan"
+                });
+            });
+
+            berat.forEach(b => {
+                const murid = muridMap[b.id_murid];
+                if(!murid) return;
+                const grupNama = isKamar ? (kamarMap[murid.id_kamar] || '-') : (kelasMap[murid.id_kelas] || '-');
+                
+                if(isKamar && !murid.id_kamar) return;
+                if(!isKamar && !murid.id_kelas) return;
+
+                dataToExport.push({
+                    [`Nama ${isKamar ? 'Kamar' : 'Kelas'}`]: grupNama,
+                    "Nama Murid": murid.nama_murid, "Bulan": b.tgl_kejadian ? new Date(b.tgl_kejadian).getMonth()+1 : '-', "Minggu": "-",
+                    "Jenis Pelanggaran": b.jenis_pelanggaran, "Poin": b.poin, "Kategori": "Berat"
+                });
+            });
             filename = `Pelanggaran_Per${isKamar ? 'Kamar' : 'Kelas'}.xlsx`;
             sheetName = `Pelanggaran ${isKamar ? 'Kamar' : 'Kelas'}`;
         }
         else if(type === 'rekap_total') {
-            const res = await fetch(`${URL_REKAP}?select=bulan,minggu,jamaah,gerak_batin,sekolah,sholat_sunnah,murid!inner(nama_murid,kelas!inner(nama_kelas),kamar!inner(nama_kamar))`, { headers: HEADERS_GET });
+            const res = await fetch(URL_REKAP, { headers: HEADERS_GET });
             const rekap = await res.json();
-            rekap.forEach(r => dataToExport.push({
-                "Nama Murid": r.murid.nama_murid, "Kelas": r.murid.kelas.nama_kelas, "Kamar": r.murid.kamar.nama_kamar,
-                "Bulan": r.bulan, "Minggu": r.minggu, "Jamaah": r.jamaah, "Batin": r.gerak_batin, "Sekolah": r.sekolah, "Sunnah": r.sholat_sunnah
-            }));
-            filename = "Rekap_Total_Pelanggaran.xlsx";
-            sheetName = "Rekap Total";
+            rekap.forEach(r => {
+                const murid = muridMap[r.id_murid];
+                if(!murid) return;
+                dataToExport.push({
+                    "Nama Murid": murid.nama_murid, "Kelas": kelasMap[murid.id_kelas] || '-', "Kamar": kamarMap[murid.id_kamar] || '-',
+                    "Bulan": r.bulan, "Minggu": r.minggu, "Jamaah": r.jamaah, "Batin": r.gerak_batin, "Sekolah": r.sekolah, "Sunnah": r.sholat_sunnah
+                });
+            });
+            filename = "Rekap_Total_Pelanggaran.xlsx"; sheetName = "Rekap Total";
         }
         else if(type === 'perizinan') {
-            const res = await fetch(`${URL_IZIN}?select=alasan,status,tgl_pulang,tgl_kembali_rencana,estimasi_hari,murid!inner(nama_murid,desa)&order=tgl_pulang.desc`, { headers: HEADERS_GET });
+            const res = await fetch(`${URL_IZIN}?select=*&order=tgl_pulang.desc`, { headers: HEADERS_GET });
             const izinRaw = await res.json();
-            izinRaw.forEach(i => dataToExport.push({
-                "Nama Murid": i.murid.nama_murid, "Desa": i.murid.desa, "Alasan": i.alasan, "Status": i.status,
-                "Tanggal Pulang": i.tgl_pulang ? new Date(i.tgl_pulang).toLocaleString('id-ID') : '-',
-                "Rencana Kembali": i.tgl_kembali_rencana ? new Date(i.tgl_kembali_rencana).toLocaleString('id-ID') : 'Sampai Sembuh',
-                "Estimasi Hari": i.estimasi_hari || '-'
-            }));
-            filename = "Data_Perizinan.xlsx";
-            sheetName = "Perizinan";
+            izinRaw.forEach(i => {
+                const murid = muridMap[i.id_murid];
+                if(!murid) return;
+                dataToExport.push({
+                    "Nama Murid": murid.nama_murid, "Desa": murid.desa, "Alasan": i.alasan, "Status": i.status,
+                    "Tanggal Pulang": i.tgl_pulang ? new Date(i.tgl_pulang).toLocaleString('id-ID') : '-',
+                    "Rencana Kembali": i.tgl_kembali_rencana ? new Date(i.tgl_kembali_rencana).toLocaleString('id-ID') : 'Sampai Sembuh',
+                    "Estimasi Hari": i.estimasi_hari || '-'
+                });
+            });
+            filename = "Data_Perizinan.xlsx"; sheetName = "Perizinan";
         }
 
         const ws = XLSX.utils.json_to_sheet(dataToExport);
@@ -834,15 +869,14 @@ async function exportToExcel(type) {
 
     } catch(e) {
         console.error(e);
-        Swal.fire('Gagal Export', 'Terjadi kesalahan saat mengambil data dari server.', 'error');
+        Swal.fire('Gagal Export', 'Terjadi kesalahan saat mengambil data.', 'error');
     }
 }
 
-// Diperbaiki: Menambahkan fungsi pembungkus agar sesuai dengan onclick di HTML
+// Fungsi Pembungkus Export
 function exportMuridExcel() { exportToExcel('murid'); }
 function exportIzinExcel() { exportToExcel('perizinan'); }
 function exportPelanggaranExcel() {
-    // Menambahkan opsi pilihan ketika tombol Export Rekap di klik
     Swal.fire({
         title: 'Pilih Jenis Export Pelanggaran',
         input: 'select',
@@ -856,15 +890,11 @@ function exportPelanggaranExcel() {
         confirmButtonText: 'Export',
         confirmButtonColor: '#008f4c',
         preConfirm: (value) => {
-            if (!value) {
-                Swal.showValidationMessage('Anda harus memilih jenis laporan!');
-            }
+            if (!value) { Swal.showValidationMessage('Anda harus memilih jenis laporan!'); }
             return value;
         }
     }).then((result) => {
-        if (result.isConfirmed) {
-            exportToExcel(result.value);
-        }
+        if (result.isConfirmed) { exportToExcel(result.value); }
     });
 }
 
@@ -899,3 +929,4 @@ document.addEventListener('DOMContentLoaded', () => {
     if (savedUser) { currentUser = JSON.parse(savedUser); initApp(); }
     else { window.location.href = "index.html"; }
 });
+```
