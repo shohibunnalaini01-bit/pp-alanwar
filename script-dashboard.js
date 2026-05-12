@@ -367,6 +367,16 @@ async function loadPenghuniKamar() {
     } catch (err) { console.error(err); }
 }
 
+async function cabutKetuaKamar(idMurid) {
+    const confirm = await Swal.fire({ title: 'Cabut Status Ketua?', text: 'Murid ini akan kembali menjadi anggota biasa.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' });
+    if (!confirm.isConfirmed) return;
+    try {
+        await fetch(`${BASE_URL}?id=eq.${idMurid}`, { method: 'PATCH', headers: HEADERS, body: JSON.stringify({ is_ketua_kamar: false }) });
+        Swal.fire('Berhasil!', 'Status ketua kamar telah dicabut.', 'success'); 
+        loadPenghuniKamar();
+    } catch(e) { Swal.fire('Error', 'Gagal mencabut status ketua.', 'error'); }
+}
+
 async function jadikanKetuaKamar(idMurid, idKamar) {
     const confirm = await Swal.fire({ title: 'Jadikan Ketua Kamar?', text: 'Ketua kamar lama akan diganti.', icon: 'question', showCancelButton: true });
     if (!confirm.isConfirmed) return;
@@ -400,12 +410,29 @@ async function keluarkanDariKamar(id) {
 }
 
 async function tambahNamaKamarMaster() {
-    const { value: namaKamar } = await Swal.fire({ title: 'Tambah Kamar Baru', input: 'text', showCancelButton: true });
+    const { value: namaKamar } = await Swal.fire({ 
+        title: 'Tambah Kamar Baru', 
+        input: 'text', 
+        inputPlaceholder: 'Contoh: Kamar Asy Syafi\'i',
+        showCancelButton: true 
+    });
     if (!namaKamar) return;
     try {
-        await fetch(URL_KAMAR, { method: 'POST', headers: HEADERS, body: JSON.stringify({ nama_kamar: namaKamar }) });
-        Swal.fire('Berhasil', 'Kamar terdaftar', 'success'); refreshDropdownKamar(); refreshDataDisiplin();
-    } catch(e) { Swal.fire('Gagal', '', 'error'); }
+        const res = await fetch(URL_KAMAR, { method: 'POST', headers: HEADERS, body: JSON.stringify({ nama_kamar: namaKamar }) });
+        
+        if (res.ok) {
+            Swal.fire('Berhasil', 'Kamar terdaftar', 'success'); 
+            refreshDropdownKamar(); 
+            refreshDataDisiplin();
+        } else {
+            // Jika gagal, baca pesan error dari Supabase
+            const errData = await res.json();
+            console.error("Supabase Error:", errData);
+            Swal.fire('Gagal Menambah Kamar', `Pesan Error: ${errData.message || 'Cek console browser (F12)'}`, 'error');
+        }
+    } catch(e) { 
+        Swal.fire('Gagal', 'Koneksi database error.', 'error'); 
+    }
 }
 
 /* =========================
