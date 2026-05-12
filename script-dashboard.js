@@ -51,34 +51,27 @@ function loadXLSX() {
 }
 
 /* =========================
-   HELPER: BUAT SEARCHABLE DROPDOWN
-   (Otomatis mengubah <select> biasa jadi input pencarian)
+   HELPER: BUAT SEARCHABLE DROPDOWN (Versi Input Text)
+   (Disesuaikan dengan struktur HTML yang pakai input text & hidden)
 ========================= */
-function convertToSearchable(selectId, placeholder, onSelectedCallback) {
-    const selectEl = document.getElementById(selectId);
-    if (!selectEl) return null;
-    if (document.getElementById(selectId + '-search')) return null; // Sudah pernah dikonversi
+function attachSearchable(textId, hiddenId, placeholder, onSelectedCallback) {
+    const textEl = document.getElementById(textId);
+    const hiddenEl = document.getElementById(hiddenId);
+    if (!textEl || !hiddenEl) return null;
 
-    selectEl.style.display = 'none';
+    // Hapus atribut readonly dan onclick bawaan dari HTML agar bisa diketik
+    textEl.removeAttribute('readonly');
+    textEl.removeAttribute('onclick');
+    textEl.placeholder = placeholder || 'Ketik untuk mencari...';
+    textEl.autocomplete = 'off';
 
-    const wrapper = document.createElement('div');
-    wrapper.style.position = 'relative';
-    wrapper.style.width = '100%';
-
-    const searchInput = document.createElement('input');
-    searchInput.type = 'text';
-    searchInput.id = selectId + '-search';
-    searchInput.placeholder = placeholder || 'Ketik untuk mencari...';
-    searchInput.setAttribute('autocomplete', 'off');
-    searchInput.style.cssText = 'width:100%;padding:10px 12px;border:1px solid #ccc;border-radius:6px;box-sizing:border-box;font-size:14px;';
-
+    // Buat elemen dropdown list
     const dropdownList = document.createElement('div');
-    dropdownList.id = selectId + '-dropdown';
     dropdownList.style.cssText = 'position:absolute;top:100%;left:0;right:0;max-height:220px;overflow-y:auto;background:#fff;border:1px solid #ccc;border-top:none;z-index:9999;display:none;box-shadow:0 4px 6px rgba(0,0,0,0.1);';
-
-    wrapper.appendChild(searchInput);
-    wrapper.appendChild(dropdownList);
-    selectEl.parentElement.insertBefore(wrapper, selectEl);
+    
+    // Pastikan parent-nya punya position relative
+    textEl.parentElement.style.position = 'relative';
+    textEl.parentElement.appendChild(dropdownList);
 
     let allItems = [];
 
@@ -95,9 +88,9 @@ function convertToSearchable(selectId, placeholder, onSelectedCallback) {
                 div.style.cssText = 'padding:10px 12px;cursor:pointer;font-size:14px;border-bottom:1px solid #f0f0f0;';
                 div.innerHTML = item.label;
                 div.addEventListener('mousedown', function(e) {
-                    e.preventDefault();
-                    searchInput.value = item.label;
-                    selectEl.value = item.value;
+                    e.preventDefault(); // Cegah blur sebelum klik terbaca
+                    textEl.value = item.label;
+                    hiddenEl.value = item.value;
                     dropdownList.style.display = 'none';
                     if (onSelectedCallback) onSelectedCallback(item);
                 });
@@ -109,23 +102,19 @@ function convertToSearchable(selectId, placeholder, onSelectedCallback) {
         dropdownList.style.display = 'block';
     }
 
-    searchInput.addEventListener('focus', function() { renderList(this.value); });
-    searchInput.addEventListener('input', function() { renderList(this.value); });
-    searchInput.addEventListener('blur', function() { setTimeout(() => { dropdownList.style.display = 'none'; }, 150); });
+    textEl.addEventListener('focus', function() { renderList(this.value); });
+    textEl.addEventListener('input', function() { renderList(this.value); });
+    textEl.addEventListener('blur', function() { setTimeout(() => { dropdownList.style.display = 'none'; }, 150); });
 
     return {
         setItems: function(items) {
             allItems = items;
-            selectEl.innerHTML = '<option value="">-- Pilih --</option>';
-            items.forEach(item => {
-                selectEl.innerHTML += `<option value="${item.value}">${item.label}</option>`;
-            });
         },
         clear: function() {
-            searchInput.value = '';
-            selectEl.value = '';
+            textEl.value = '';
+            hiddenEl.value = '';
         },
-        getValue: function() { return selectEl.value; }
+        getValue: function() { return hiddenEl.value; }
     };
 }
 
@@ -209,13 +198,21 @@ function searchData() {
 document.getElementById('formMurid').addEventListener('submit', async function(e) {
     e.preventDefault();
     Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    
+    // Diperbaiki: Menyesuaikan ID dari HTML (nome_murid, bukan nama_murid)
     const payload = {
-        nama_murid: document.getElementById('nama_murid').value, nik_murid: document.getElementById('nik_murid').value,
-        no_kk: document.getElementById('no_kk').value, nama_ayah: document.getElementById('nama_ayah').value,
-        nik_ayah: document.getElementById('nik_ayah').value, nama_ibu: document.getElementById('nama_ibu').value,
-        nik_ibu: document.getElementById('nik_ibu').value, dusun: document.getElementById('dusun').value,
-        desa: document.getElementById('desa').value, kecamatan: document.getElementById('kecamatan').value,
-        kabupaten: document.getElementById('kabupaten').value, provinsi: document.getElementById('provinsi').value
+        nama_murid: document.getElementById('nome_murid').value, 
+        nik_murid: document.getElementById('nik_murid').value,
+        no_kk: document.getElementById('no_kk').value, 
+        nama_ayah: document.getElementById('nome_ayah').value,
+        nik_ayah: document.getElementById('nik_ayah').value, 
+        nama_ibu: document.getElementById('nome_ibu').value,
+        nik_ibu: document.getElementById('nik_ibu').value, 
+        dusun: document.getElementById('dusun').value,
+        desa: document.getElementById('desa').value, 
+        kecamatan: document.getElementById('kecamatan').value,
+        kabupaten: document.getElementById('kabupaten').value, 
+        provinsi: document.getElementById('provinsi').value
     };
     try {
         const response = await fetch(BASE_URL, { method: 'POST', headers: {...HEADERS, 'Prefer': 'return=representation'}, body: JSON.stringify(payload) });
@@ -449,7 +446,7 @@ async function refreshDropdownSantriIzin() {
     window.listMuridIzin = data;
 
     if (!searchIzinObj) {
-        searchIzinObj = convertToSearchable('pilih-santri-izin', '🔍 Cari Nama Santri...', function(item) {
+        searchIzinObj = attachSearchable('pilih-santri-izin-text', 'pilih-santri-izin-id', '🔍 Cari Nama Santri...', function(item) {
             const alamatView = document.getElementById('alamat-izin-view');
             if (alamatView) alamatView.value = item.data.desa || '';
         });
@@ -465,14 +462,14 @@ async function refreshDropdownSantriIzin() {
 }
 
 function updateAlamatIzin() {
-    const idMurid = document.getElementById('pilih-santri-izin').value;
+    const idMurid = searchIzinObj ? searchIzinObj.getValue() : '';
     const viewAlamat = document.getElementById('alamat-izin-view');
     const murid = window.listMuridIzin ? window.listMuridIzin.find(m => m.id == idMurid) : null;
     if (viewAlamat) viewAlamat.value = murid ? murid.desa : "";
 }
 
 async function simpanIzin() {
-    const idMurid = document.getElementById('pilih-santri-izin').value;
+    const idMurid = searchIzinObj ? searchIzinObj.getValue() : '';
     const alasan = document.getElementById('alasan-izin').value;
     const hari = document.getElementById('estimasi-hari').value;
     const isSakit = document.getElementById('izin-sakit').checked;
@@ -629,7 +626,7 @@ async function isiDropdownMuridBerat() {
         const data = await res.json();
 
         if (!searchBeratObj) {
-            searchBeratObj = convertToSearchable('pilih-murid-berat', '🔍 Cari Nama Santri...', null);
+            searchBeratObj = attachSearchable('pilih-murid-berat-text', 'pilih-murid-berat-id', '🔍 Cari Nama Santri...', null);
         }
         if (searchBeratObj) {
             const items = data.map(m => ({
@@ -643,9 +640,12 @@ async function isiDropdownMuridBerat() {
 }
 
 async function simpanPelanggaranBerat() {
-    const id_murid = document.getElementById('pilih-murid-berat').value;
-    const jenis_pelanggaran = document.getElementById('nama-pelanggaran-berat').value;
+    const id_murid = searchBeratObj ? searchBeratObj.getValue() : '';
+    
+    // Diperbaiki: Menggunakan ID dari HTML (nome-pelanggaran-berat)
+    const jenis_pelanggaran = document.getElementById('nome-pelanggaran-berat').value;
     const poin = document.getElementById('poin-berat').value;
+    
     if (!id_murid || !jenis_pelanggaran || !poin) return Swal.fire('Lengkapi Data!', 'Wajib diisi semua!', 'warning');
     try {
         const res = await fetch(URL_PELANGGARAN, {
@@ -654,7 +654,7 @@ async function simpanPelanggaranBerat() {
         });
         if (res.ok) {
             Swal.fire('Tercatat!', 'Pelanggaran berat berhasil disimpan.', 'success');
-            document.getElementById('nama-pelanggaran-berat').value = '';
+            document.getElementById('nome-pelanggaran-berat').value = '';
             document.getElementById('poin-berat').value = '';
             if (searchBeratObj) searchBeratObj.clear();
             if (document.getElementById('section-ranking').style.display === 'block') refreshDataDisiplin();
@@ -755,10 +755,9 @@ async function inisialisasiGrafikKamar() {
 }
 
 /* =========================
-   8. EXPORT EXCEL (AUTO LOAD LIBRARY)
+   8. EXPORT EXCEL (DIPERBAIKI)
 ========================= */
 async function exportToExcel(type) {
-    // Load SheetJS secara otomatis
     try {
         await loadXLSX();
     } catch(e) {
@@ -835,8 +834,38 @@ async function exportToExcel(type) {
 
     } catch(e) {
         console.error(e);
-        Swal.fire('Gagal Export', 'Terjadi kesalahan saat mengambil data.', 'error');
+        Swal.fire('Gagal Export', 'Terjadi kesalahan saat mengambil data dari server.', 'error');
     }
+}
+
+// Diperbaiki: Menambahkan fungsi pembungkus agar sesuai dengan onclick di HTML
+function exportMuridExcel() { exportToExcel('murid'); }
+function exportIzinExcel() { exportToExcel('perizinan'); }
+function exportPelanggaranExcel() {
+    // Menambahkan opsi pilihan ketika tombol Export Rekap di klik
+    Swal.fire({
+        title: 'Pilih Jenis Export Pelanggaran',
+        input: 'select',
+        inputOptions: {
+            'pelanggaran_kamar': 'Pelanggaran Per Kamar',
+            'pelanggaran_kelas': 'Pelanggaran Per Kelas',
+            'rekap_total': 'Rekap Seluruh Pelanggaran'
+        },
+        inputPlaceholder: 'Pilih jenis laporan',
+        showCancelButton: true,
+        confirmButtonText: 'Export',
+        confirmButtonColor: '#008f4c',
+        preConfirm: (value) => {
+            if (!value) {
+                Swal.showValidationMessage('Anda harus memilih jenis laporan!');
+            }
+            return value;
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            exportToExcel(result.value);
+        }
+    });
 }
 
 /* =========================
