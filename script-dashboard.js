@@ -130,12 +130,12 @@ document.getElementById('formMurid').addEventListener('submit', async function(e
     e.preventDefault();
     Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     const payload = {
-        nama_murid: document.getElementById('nome_murid').value, 
+        nome_murid: document.getElementById('nome_murid').value, 
         nik_murid: document.getElementById('nik_murid').value,
         no_kk: document.getElementById('no_kk').value, 
-        nama_ayah: document.getElementById('nome_ayah').value,
+        nome_ayah: document.getElementById('nome_ayah').value,
         nik_ayah: document.getElementById('nik_ayah').value, 
-        nama_ibu: document.getElementById('nome_ibu').value,
+        nome_ibu: document.getElementById('nome_ibu').value,
         nik_ibu: document.getElementById('nik_ibu').value, 
         dusun: document.getElementById('dusun').value,
         desa: document.getElementById('desa').value, 
@@ -146,12 +146,15 @@ document.getElementById('formMurid').addEventListener('submit', async function(e
     try {
         const response = await fetch(BASE_URL, { method: 'POST', headers: {...HEADERS, 'Prefer': 'return=representation'}, body: JSON.stringify(payload) });
         if (response.ok) { Swal.fire('Berhasil!', 'Data murid berhasil ditambahkan.', 'success'); toggleModal(false); loadDataMurid(); }
-        else { Swal.fire('Gagal!', 'Tidak bisa menyimpan data.', 'error'); }
+        else { 
+            const errData = await response.json();
+            Swal.fire('Gagal!', `Pesan: ${errData.message || 'Tidak bisa menyimpan data.'}`, 'error'); 
+        }
     } catch (err) { Swal.fire('Error', 'Koneksi database gagal.', 'error'); }
 });
 
-async function hapusData(id, nama) {
-    const confirm = await Swal.fire({ title: 'Hapus Data?', text: `Yakin ingin menghapus ${nama}?`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' });
+async function hapusData(id, nome) {
+    const confirm = await Swal.fire({ title: 'Hapus Data?', text: `Yakin ingin menghapus ${nome}?`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' });
     if (!confirm.isConfirmed) return;
     try {
         const res = await fetch(`${BASE_URL}?id=eq.${id}`, { method: 'DELETE', headers: HEADERS_GET });
@@ -176,8 +179,8 @@ async function lihatDetail(id) {
 
         let htmlDetail = `<div style="text-align:left; max-height:65vh; overflow-y:auto; font-size:14px;">`;
         htmlDetail += `<h4 style="margin-bottom:5px;">Data Pribadi</h4>
-            <p><b>Nama:</b> ${m.nama_murid || '-'}<br><b>NIK:</b> ${m.nik_murid || '-'}<br>
-            <b>Ayah:</b> ${m.nama_ayah || '-'}<br><b>Ibu:</b> ${m.nama_ibu || '-'}<br>
+            <p><b>Nama:</b> ${m.nome_murid || m.nama_murid || '-'}<br><b>NIK:</b> ${m.nik_murid || '-'}<br>
+            <b>Ayah:</b> ${m.nome_ayah || m.nama_ayah || '-'}<br><b>Ibu:</b> ${m.nome_ibu || m.nome_ibu || '-'}<br>
             <b>Alamat:</b> Dusun ${m.dusun || '-'}, Desa ${m.desa || '-'}, Kec. ${m.kecamatan || '-'}</p><hr>`;
         htmlDetail += `<h4 style="margin-bottom:5px;">Riwayat Izin (Total: ${izin.length} kali)</h4><ul style="padding-left:20px;">`;
         if(izin.length === 0) htmlDetail += `<li>Tidak ada riwayat izin</li>`;
@@ -222,7 +225,7 @@ async function loadPenghuniKelas() {
         tbody.innerHTML = '';
         if (data.length === 0) { tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">Belum ada murid</td></tr>`; return; }
         data.forEach(m => {
-            tbody.innerHTML += `<tr><td>${m.nama_murid}</td><td>${m.nik_murid}</td><td><button onclick="keluarkanMurid(${m.id})" class="btn-keluarkan"><i class="fas fa-user-minus"></i> Keluarkan</button></td></tr>`;
+            tbody.innerHTML += `<tr><td>${m.nome_murid || m.nome_murid}</td><td>${m.nik_murid}</td><td><button onclick="keluarkanMurid(${m.id})" class="btn-keluarkan"><i class="fas fa-user-minus"></i> Keluarkan</button></td></tr>`;
         });
     } catch (err) { console.error(err); }
 }
@@ -231,11 +234,11 @@ async function tambahMuridKeKelas() {
     const idKelas = document.getElementById('pilih-kelas-filter').value;
     if (!idKelas) return Swal.fire('Pilih Kelas!', 'Silakan pilih kelas di filter terlebih dahulu.', 'warning');
     try {
-        const res = await fetch(`${BASE_URL}?id_kelas=is.null&select=id,nama_murid,desa`, { headers: HEADERS_GET });
+        const res = await fetch(`${BASE_URL}?id_kelas=is.null&select=id,nome_murid,desa`, { headers: HEADERS_GET });
         const muridTersedia = await res.json();
         if (muridTersedia.length === 0) return Swal.fire('Data Kosong', 'Semua santri sudah punya kelas.', 'info');
         const options = {};
-        muridTersedia.forEach(m => { options[m.id] = `${m.nama_murid} (${m.desa || '-'})`; });
+        muridTersedia.forEach(m => { options[m.id] = `${m.nome_murid || m.nama_murid} (${m.desa || '-'})`; });
         const { value: idMurid } = await Swal.fire({ title: 'Masukkan Murid ke Kelas', input: 'select', inputOptions: options, showCancelButton: true, confirmButtonColor: '#00703c' });
         if (idMurid) {
             await fetch(`${BASE_URL}?id=eq.${idMurid}`, { method: 'PATCH', headers: HEADERS, body: JSON.stringify({ id_kelas: parseInt(idKelas) }) });
@@ -251,12 +254,13 @@ async function keluarkanMurid(id) {
     Swal.fire('Berhasil!', 'Murid dikeluarkan.', 'success'); loadPenghuniKelas();
 }
 
-async function tambahNamaKelasMaster() {
-    const { value: namaKelas } = await Swal.fire({ title: 'Tambah Kelas Baru', input: 'text', showCancelButton: true });
-    if (!namaKelas) return;
+async function tambahNomeKelasMaster() {
+    const { value: nomeKelas } = await Swal.fire({ title: 'Tambah Kelas Baru', input: 'text', showCancelButton: true });
+    if (!nomeKelas) return;
     try {
-        await fetch(URL_KELAS, { method: 'POST', headers: HEADERS, body: JSON.stringify({ nama_kelas: namaKelas }) });
-        Swal.fire('Berhasil', 'Kelas terdaftar', 'success'); refreshDropdownKelas(); tampilkanMenuTombolKelas(); refreshDataDisiplin();
+        const res = await fetch(URL_KELAS, { method: 'POST', headers: HEADERS, body: JSON.stringify({ nome_kelas: nomeKelas }) });
+        if (res.ok) { Swal.fire('Berhasil', 'Kelas terdaftar', 'success'); refreshDropdownKelas(); tampilkanMenuTombolKelas(); refreshDataDisiplin(); }
+        else { const errData = await res.json(); Swal.fire('Gagal', `Pesan Database: ${errData.message}`, 'error'); }
     } catch(e) { Swal.fire('Gagal', '', 'error'); }
 }
 
@@ -269,7 +273,7 @@ async function refreshDropdownKamar() {
         const data = await res.json();
         const select = document.getElementById('pilih-kamar-filter');
         select.innerHTML = '<option value="">-- Pilih Kamar --</option>';
-        data.forEach(k => { select.innerHTML += `<option value="${k.id}">${k.nama_kamar}</option>`; });
+        data.forEach(k => { select.innerHTML += `<option value="${k.id}">${k.nome_kamar || k.nama_kamar}</option>`; });
     } catch (err) { console.error(err); }
 }
 
@@ -278,42 +282,30 @@ async function loadPenghuniKamar() {
     const tbody = document.getElementById('body-tabel-kamar');
     if (!idKamar) { tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">Pilih kamar terlebih dahulu</td></tr>`; return; }
     try {
-        const res = await fetch(`${BASE_URL}?id_kamar=eq.${idKamar}&select=id,nama_murid,nik_murid,is_ketua_kamar`, { headers: HEADERS_GET });
+        const res = await fetch(`${BASE_URL}?id_kamar=eq.${idKamar}&select=id,nome_murid,nik_murid,is_ketua_kamar`, { headers: HEADERS_GET });
         const data = await res.json();
         tbody.innerHTML = '';
         if (data.length === 0) { tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">Belum ada penghuni</td></tr>`; return; }
         data.forEach(m => {
             const isKetua = m.is_ketua_kamar === true;
-            const namaTampil = isKetua ? `<span style="color:#d35400; font-weight:bold;">⭐ ${m.nama_murid} (Ketua)</span>` : m.nama_murid;
+            const nomeTampil = isKetua ? `<span style="color:#d35400; font-weight:bold;">⭐ ${m.nome_murid || m.nama_murid} (Ketua)</span>` : (m.nome_murid || m.nama_murid);
             
             let btnAksi = '';
             if (isKetua) {
-                // Jika dia ketua, tombol yang muncul: Cabut Ketua & Keluarkan
                 btnAksi = `<button onclick="cabutKetuaKamar(${m.id})" class="btn-keluarkan" style="border-color:orange;color:orange;"><i class="fas fa-times-circle"></i> Cabut Ketua</button> `;
             } else {
-                // Jika bukan ketua, tombol yang muncul: Jadikan Ketua & Keluarkan
                 btnAksi = `<button onclick="jadikanKetuaKamar(${m.id}, ${idKamar})" class="btn-keluarkan" style="border-color:blue;color:blue;"><i class="fas fa-star"></i> Jadikan Ketua</button> `;
             }
             btnAksi += `<button onclick="keluarkanDariKamar(${m.id})" class="btn-keluarkan"><i class="fas fa-user-minus"></i> Keluarkan</button>`;
 
             tbody.innerHTML += `
                 <tr class="${isKetua ? 'row-ketua' : ''}">
-                    <td>${namaTampil}</td>
+                    <td>${nomeTampil}</td>
                     <td>${m.nik_murid}</td>
                     <td>${btnAksi}</td>
                 </tr>`;
         });
     } catch (err) { console.error(err); }
-}
-
-async function cabutKetuaKamar(idMurid) {
-    const confirm = await Swal.fire({ title: 'Cabut Status Ketua?', text: 'Murid ini akan kembali menjadi anggota biasa.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' });
-    if (!confirm.isConfirmed) return;
-    try {
-        await fetch(`${BASE_URL}?id=eq.${idMurid}`, { method: 'PATCH', headers: HEADERS, body: JSON.stringify({ is_ketua_kamar: false }) });
-        Swal.fire('Berhasil!', 'Status ketua kamar telah dicabut.', 'success'); 
-        loadPenghuniKamar();
-    } catch(e) { Swal.fire('Error', 'Gagal mencabut status ketua.', 'error'); }
 }
 
 async function jadikanKetuaKamar(idMurid, idKamar) {
@@ -327,13 +319,23 @@ async function jadikanKetuaKamar(idMurid, idKamar) {
     } catch(e) { Swal.fire('Error', 'Gagal mengubah ketua kamar.', 'error'); }
 }
 
+async function cabutKetuaKamar(idMurid) {
+    const confirm = await Swal.fire({ title: 'Cabut Status Ketua?', text: 'Murid ini akan kembali menjadi anggota biasa.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' });
+    if (!confirm.isConfirmed) return;
+    try {
+        await fetch(`${BASE_URL}?id=eq.${idMurid}`, { method: 'PATCH', headers: HEADERS, body: JSON.stringify({ is_ketua_kamar: false }) });
+        Swal.fire('Berhasil!', 'Status ketua kamar telah dicabut.', 'success'); 
+        loadPenghuniKamar();
+    } catch(e) { Swal.fire('Error', 'Gagal mencabut status ketua.', 'error'); }
+}
+
 async function tambahMuridKeKamar() {
     const idKamar = document.getElementById('pilih-kamar-filter').value;
     if (!idKamar) return Swal.fire('Pilih Kamar!', 'Silakan pilih kamar dulu.', 'warning');
-    const res = await fetch(`${BASE_URL}?id_kamar=is.null&select=id,nama_murid`, { headers: HEADERS_GET });
+    const res = await fetch(`${BASE_URL}?id_kamar=is.null&select=id,nome_murid`, { headers: HEADERS_GET });
     const murid = await res.json();
     const options = {};
-    murid.forEach(m => { options[m.id] = m.nama_murid; });
+    murid.forEach(m => { options[m.id] = m.nome_murid || m.nama_murid; });
     const { value: idMurid } = await Swal.fire({ title: 'Masukkan ke Kamar', input: 'select', inputOptions: options, showCancelButton: true });
     if (idMurid) {
         await fetch(`${BASE_URL}?id=eq.${idMurid}`, { method: 'PATCH', headers: HEADERS, body: JSON.stringify({ id_kamar: parseInt(idKamar) }) });
@@ -348,23 +350,14 @@ async function keluarkanDariKamar(id) {
     Swal.fire('Berhasil!', 'Santri dikeluarkan.', 'success'); loadPenghuniKamar();
 }
 
-async function tambahNamaKamarMaster() {
-    const { value: namaKamar } = await Swal.fire({ 
-        title: 'Tambah Kamar Baru', 
-        input: 'text', 
-        inputPlaceholder: 'Contoh: Kamar Asy Syafi\'i',
-        showCancelButton: true 
-    });
-    if (!namaKamar) return;
+async function tambahNomeKamarMaster() {
+    const { value: nomeKamar } = await Swal.fire({ title: 'Tambah Kamar Baru', input: 'text', inputPlaceholder: "Contoh: Kamar Asy Syafi'i", showCancelButton: true });
+    if (!nomeKamar) return;
     try {
-        const res = await fetch(URL_KAMAR, { method: 'POST', headers: HEADERS, body: JSON.stringify({ nama_kamar: namaKamar }) });
-        
+        const res = await fetch(URL_KAMAR, { method: 'POST', headers: HEADERS, body: JSON.stringify({ nome_kamar: nomeKamar }) });
         if (res.ok) {
-            Swal.fire('Berhasil', 'Kamar terdaftar', 'success'); 
-            refreshDropdownKamar(); 
-            refreshDataDisiplin();
+            Swal.fire('Berhasil', 'Kamar terdaftar', 'success'); refreshDropdownKamar(); refreshDataDisiplin();
         } else {
-            // Jika gagal, baca pesan error dari Supabase
             const errData = await res.json();
             console.error("Supabase Error:", errData);
             Swal.fire('Gagal Menambah Kamar', `Pesan Error: ${errData.message || 'Cek console browser (F12)'}`, 'error');
@@ -404,14 +397,12 @@ function toggleSakit() {
     hitungTglKembali();
 }
 
-// POIN 2: POP UP PILIH SANTRI IZIN (FILTER KELAS DULU)
 async function pilihSantriIzin() {
     try {
         const resKelas = await fetch(URL_KELAS, { headers: HEADERS_GET });
         const dataKelas = await resKelas.json();
-        
         const optionsKelas = {};
-        dataKelas.forEach(k => { optionsKelas[k.id] = k.nama_kelas; });
+        dataKelas.forEach(k => { optionsKelas[k.id] = k.nome_kelas || k.nama_kelas; });
 
         const { value: idKelas } = await Swal.fire({
             title: 'Pilih Kelas Terlebih Dahulu',
@@ -425,16 +416,13 @@ async function pilihSantriIzin() {
 
         if (!idKelas) return;
 
-        const resMurid = await fetch(`${BASE_URL}?id_kelas=eq.${idKelas}&select=id,nama_murid,desa&order=nama_murid.asc`, { headers: HEADERS_GET });
+        const resMurid = await fetch(`${BASE_URL}?id_kelas=eq.${idKelas}&select=id,nome_murid,desa&order=nome_murid.asc`, { headers: HEADERS_GET });
         const dataMurid = await resMurid.json();
 
-        if (dataMurid.length === 0) {
-            Swal.fire('Kosong', 'Tidak ada murid di kelas ini.', 'info');
-            return;
-        }
+        if (dataMurid.length === 0) { Swal.fire('Kosong', 'Tidak ada murid di kelas ini.', 'info'); return; }
 
         const optionsMurid = {};
-        dataMurid.forEach(m => { optionsMurid[m.id] = `${m.nama_murid} (${m.desa || '-'})`; });
+        dataMurid.forEach(m => { optionsMurid[m.id] = `${m.nome_murid || m.nama_murid} (${m.desa || '-'})`; });
 
         const { value: idMurid } = await Swal.fire({
             title: 'Pilih Santri',
@@ -448,15 +436,11 @@ async function pilihSantriIzin() {
 
         if (idMurid) {
             const muridTerpilih = dataMurid.find(m => m.id == idMurid);
-            document.getElementById('pilih-santri-izin-text').value = muridTerpilih.nama_murid;
+            document.getElementById('pilih-santri-izin-text').value = muridTerpilih.nome_murid || muridTerpilih.nama_murid;
             document.getElementById('pilih-santri-izin-id').value = muridTerpilih.id;
             document.getElementById('alamat-izin-view').value = muridTerpilih.desa || '-';
         }
-
-    } catch(e) {
-        console.error(e);
-        Swal.fire('Error', 'Gagal memuat data.', 'error');
-    }
+    } catch(e) { console.error(e); Swal.fire('Error', 'Gagal memuat data.', 'error'); }
 }
 
 async function simpanIzin() {
@@ -486,6 +470,9 @@ async function simpanIzin() {
             document.getElementById('estimasi-hari').value = "";
             document.getElementById('izin-sakit').checked = false; toggleSakit();
             bukaTabIzin('semua', document.querySelector('#page-perizinan .btn-tab:nth-child(2)'));
+        } else {
+            const errData = await res.json();
+            Swal.fire('Gagal', `Pesan: ${errData.message || 'Tidak bisa menyimpan.'}`, 'error');
         }
     } catch (err) { console.error(err); }
 }
@@ -494,7 +481,7 @@ async function loadDataIzin(filter) {
     const tbody = document.getElementById('list-izin');
     tbody.innerHTML = '<tr><td colspan="5">Memuat data...</td></tr>';
     try {
-        const res = await fetch(`${URL_IZIN}?select=*,murid(nama_murid,desa)&order=tgl_pulang.desc`, { headers: HEADERS_GET });
+        const res = await fetch(`${URL_IZIN}?select=*,murid(nome_murid,desa)&order=tgl_pulang.desc`, { headers: HEADERS_GET });
         const data = await res.json();
         const skrg = new Date();
         tbody.innerHTML = '';
@@ -506,7 +493,7 @@ async function loadDataIzin(filter) {
             if (filter === 'terlambat' && statusSkrg !== 'Terlambat') return;
             tbody.innerHTML += `
                 <tr>
-                    <td><b>${item.murid.nama_murid}</b><br><small>${item.murid.desa}</small></td>
+                    <td><b>${item.murid.nome_murid || item.murid.nama_murid}</b><br><small>${item.murid.desa}</small></td>
                     <td>${item.alasan}</td>
                     <td>${tglRencana ? tglRencana.toLocaleString('id-ID') : 'Sampai Sembuh'}</td>
                     <td><span class="badge-izin status-${statusSkrg.toLowerCase()}">${statusSkrg}</span></td>
@@ -560,11 +547,11 @@ async function refreshDataDisiplin() {
     tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Menganalisis Data...</td></tr>';
     try {
         const [resBerat, resRingan, resKelas, resKamar, resAllMurid] = await Promise.all([
-            fetch(`${URL_PELANGGARAN}?select=*,murid!inner(nama_murid,id_kelas,id_kamar,kelas(nama_kelas),kamar(nama_kamar))`, { headers: HEADERS_GET }),
-            fetch(`${URL_REKAP}?select=*,murid!inner(nama_murid,id_kelas,id_kamar,kelas(nama_kelas),kamar(nama_kamar))`, { headers: HEADERS_GET }),
+            fetch(`${URL_PELANGGARAN}?select=*,murid!inner(nome_murid,id_kelas,id_kamar,kelas(nome_kelas),kamar(nome_kamar))`, { headers: HEADERS_GET }),
+            fetch(`${URL_REKAP}?select=*,murid!inner(nome_murid,id_kelas,id_kamar,kelas(nome_kelas),kamar(nome_kamar))`, { headers: HEADERS_GET }),
             fetch(URL_KELAS, { headers: HEADERS_GET }),
             fetch(URL_KAMAR, { headers: HEADERS_GET }),
-            fetch(`${BASE_URL}?select=id,nama_murid,id_kamar,is_ketua_kamar`, { headers: HEADERS_GET })
+            fetch(`${BASE_URL}?select=id,nome_murid,id_kamar,is_ketua_kamar`, { headers: HEADERS_GET })
         ]);
         const dataBerat = await resBerat.json();
         const dataRingan = await resRingan.json();
@@ -577,13 +564,13 @@ async function refreshDataDisiplin() {
 
         let rekapPoin = {};
         let ketuaKamarMap = {};
-        allMurid.forEach(m => { if(m.is_ketua_kamar && m.id_kamar) ketuaKamarMap[String(m.id_kamar)] = m.nama_murid; });
+        allMurid.forEach(m => { if(m.is_ketua_kamar && m.id_kamar) ketuaKamarMap[String(m.id_kamar)] = m.nome_murid || m.nama_murid; });
 
         if (menuAktifDisiplin === 'kelas') {
-            dataKelas.forEach(k => { rekapPoin[String(k.id)] = { nama: k.nama_kelas, poin: 0 }; });
+            dataKelas.forEach(k => { rekapPoin[String(k.id)] = { nome: k.nome_kelas || k.nama_kelas, poin: 0 }; });
             thead.innerHTML = '<tr><th>Rank</th><th>Nama Kelas</th><th>Total Poin</th></tr>';
         } else {
-            dataKamar.forEach(k => { rekapPoin[String(k.id)] = { nama: k.nama_kamar, poin: 0 }; });
+            dataKamar.forEach(k => { rekapPoin[String(k.id)] = { nome: k.nome_kamar || k.nama_kamar, poin: 0 }; });
             thead.innerHTML = '<tr><th>Rank</th><th>Nama Kamar</th><th>Ketua Kamar</th><th>Total Poin</th></tr>';
         }
 
@@ -606,19 +593,17 @@ async function refreshDataDisiplin() {
         tbody.innerHTML = '';
         finalData.forEach((r, index) => {
             let ketuaCell = menuAktifDisiplin === 'kamar' ? `<td>${ketuaKamarMap[r.id] ? '⭐ ' + ketuaKamarMap[r.id] : '-'}</td>` : '';
-            tbody.innerHTML += `<tr><td><b>${index + 1}</b></td><td>${r.nama}</td>${ketuaCell}<td><b style="color:${r.poin > 0 ? 'red' : '#333'}">${r.poin} Poin</b></td></tr>`;
+            tbody.innerHTML += `<tr><td><b>${index + 1}</b></td><td>${r.nome}</td>${ketuaCell}<td><b style="color:${r.poin > 0 ? 'red' : '#333'}">${r.poin} Poin</b></td></tr>`;
         });
     } catch (e) { console.error(e); tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:red;">Gagal memuat data</td></tr>'; }
 }
 
-// POIN 2: POP UP PILIH SANTRI PELANGGARAN BERAT (FILTER KELAS DULU)
 async function pilihMuridBerat() {
     try {
         const resKelas = await fetch(URL_KELAS, { headers: HEADERS_GET });
         const dataKelas = await resKelas.json();
-        
         const optionsKelas = {};
-        dataKelas.forEach(k => { optionsKelas[k.id] = k.nama_kelas; });
+        dataKelas.forEach(k => { optionsKelas[k.id] = k.nome_kelas || k.nama_kelas; });
 
         const { value: idKelas } = await Swal.fire({
             title: 'Pilih Kelas Terlebih Dahulu',
@@ -632,16 +617,13 @@ async function pilihMuridBerat() {
 
         if (!idKelas) return;
 
-        const resMurid = await fetch(`${BASE_URL}?id_kelas=eq.${idKelas}&select=id,nama_murid,desa&order=nama_murid.asc`, { headers: HEADERS_GET });
+        const resMurid = await fetch(`${BASE_URL}?id_kelas=eq.${idKelas}&select=id,nome_murid,desa&order=nome_murid.asc`, { headers: HEADERS_GET });
         const dataMurid = await resMurid.json();
 
-        if (dataMurid.length === 0) {
-            Swal.fire('Kosong', 'Tidak ada murid di kelas ini.', 'info');
-            return;
-        }
+        if (dataMurid.length === 0) { Swal.fire('Kosong', 'Tidak ada murid di kelas ini.', 'info'); return; }
 
         const optionsMurid = {};
-        dataMurid.forEach(m => { optionsMurid[m.id] = `${m.nama_murid} (${m.desa || '-'})`; });
+        dataMurid.forEach(m => { optionsMurid[m.id] = `${m.nome_murid || m.nama_murid} (${m.desa || '-'})`; });
 
         const { value: idMurid } = await Swal.fire({
             title: 'Pilih Santri',
@@ -655,14 +637,10 @@ async function pilihMuridBerat() {
 
         if (idMurid) {
             const muridTerpilih = dataMurid.find(m => m.id == idMurid);
-            document.getElementById('pilih-murid-berat-text').value = muridTerpilih.nama_murid;
+            document.getElementById('pilih-murid-berat-text').value = muridTerpilih.nome_murid || muridTerpilih.nama_murid;
             document.getElementById('pilih-murid-berat-id').value = muridTerpilih.id;
         }
-
-    } catch(e) {
-        console.error(e);
-        Swal.fire('Error', 'Gagal memuat data.', 'error');
-    }
+    } catch(e) { console.error(e); Swal.fire('Error', 'Gagal memuat data.', 'error'); }
 }
 
 async function simpanPelanggaranBerat() {
@@ -683,7 +661,10 @@ async function simpanPelanggaranBerat() {
             document.getElementById('nome-pelanggaran-berat').value = '';
             document.getElementById('poin-berat').value = '';
             if (document.getElementById('section-ranking').style.display === 'block') refreshDataDisiplin();
-        } else { const errData = await res.json(); console.error("Supabase Error:", errData); Swal.fire('Gagal', 'Cek kembali tipe data di Supabase Anda!', 'error'); }
+        } else { 
+            const errData = await res.json(); 
+            Swal.fire('Gagal', `Pesan: ${errData.message || 'Cek kembali tipe data di Supabase Anda!'}`, 'error'); 
+        }
     } catch(e) { Swal.fire('Error', 'Koneksi database gagal.', 'error'); }
 }
 
@@ -695,26 +676,26 @@ async function tampilkanMenuTombolKelas() {
         const data = await res.json();
         container.innerHTML = '';
         data.forEach(k => {
-            container.innerHTML += `<div class="card-kelas" onclick="bukaFormMassal(${k.id}, '${k.nama_kelas}')"><i class="fas fa-users"></i><h4>${k.nama_kelas}</h4><p>Klik untuk isi audit</p></div>`;
+            container.innerHTML += `<div class="card-kelas" onclick="bukaFormMassal(${k.id}, '${k.nome_kelas || k.nama_kelas}')"><i class="fas fa-users"></i><h4>${k.nome_kelas || k.nama_kelas}</h4><p>Klik untuk isi audit</p></div>`;
         });
     } catch (e) { console.error(e); }
 }
 
-async function bukaFormMassal(idKelas, namaKelas) {
+async function bukaFormMassal(idKelas, nomeKelas) {
     document.getElementById('section-pilih-kelas-rekap').style.display = 'none';
     document.getElementById('section-form-massal').style.display = 'block';
-    document.getElementById('judul-rekap-massal').innerText = "Input Rekap Ringan: " + namaKelas;
+    document.getElementById('judul-rekap-massal').innerText = "Input Rekap Ringan: " + nomeKelas;
     const tbody = document.getElementById('body-rekap-massal');
     tbody.innerHTML = '<tr><td colspan="5">Memuat daftar santri...</td></tr>';
     try {
-        const res = await fetch(`${BASE_URL}?id_kelas=eq.${idKelas}&select=id,nama_murid`, { headers: HEADERS_GET });
+        const res = await fetch(`${BASE_URL}?id_kelas=eq.${idKelas}&select=id,nome_murid`, { headers: HEADERS_GET });
         const dataMurid = await res.json();
         tbody.innerHTML = '';
         if (dataMurid.length === 0) { tbody.innerHTML = '<tr><td colspan="5">Belum ada murid di kelas ini.</td></tr>'; return; }
         dataMurid.forEach(m => {
             tbody.innerHTML += `
                 <tr class="row-rekap-santri" data-id="${m.id}">
-                    <td><b>${m.nama_murid}</b></td>
+                    <td><b>${m.nome_murid || m.nama_murid}</b></td>
                     <td><input type="number" class="in-jam" style="width:70px; padding:5px;" placeholder="0" min="0"></td>
                     <td><input type="number" class="in-bat" style="width:70px; padding:5px;" placeholder="0" min="0"></td>
                     <td><input type="number" class="in-sek" style="width:70px; padding:5px;" placeholder="0" min="0"></td>
@@ -760,7 +741,7 @@ async function inisialisasiGrafikKelas() {
         const [resKelas, resMurid] = await Promise.all([ fetch(URL_KELAS, { headers: HEADERS_GET }), fetch(BASE_URL + "?select=id_kelas", { headers: HEADERS_GET }) ]);
         const daftarKelas = await resKelas.json(); const daftarMurid = await resMurid.json();
         const labelKelas = [], dataJumlah = [];
-        daftarKelas.forEach(k => { labelKelas.push(k.nama_kelas); dataJumlah.push(daftarMurid.filter(m => m.id_kelas === k.id).length); });
+        daftarKelas.forEach(k => { labelKelas.push(k.nome_kelas || k.nama_kelas); dataJumlah.push(daftarMurid.filter(m => m.id_kelas === k.id).length); });
         const ctx = canvasKelas.getContext('2d'); if (window.myChartKelas) window.myChartKelas.destroy();
         window.myChartKelas = new Chart(ctx, { type: 'bar', data: { labels: labelKelas, datasets: [{ label: 'Jumlah Santri', data: dataJumlah, backgroundColor: ['#00703c','#008f4c','#2ecc71','#ffcc00','#f39c12','#d35400'], borderRadius: 5 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } } });
     } catch (e) { console.error("Grafik Kelas Error:", e); }
@@ -773,7 +754,7 @@ async function inisialisasiGrafikKamar() {
         const [resKamar, resMurid] = await Promise.all([ fetch(URL_KAMAR, { headers: HEADERS_GET }), fetch(BASE_URL + "?select=id_kamar", { headers: HEADERS_GET }) ]);
         const daftarKamar = await resKamar.json(); const daftarMurid = await resMurid.json();
         const labelKamar = [], dataJumlah = [];
-        daftarKamar.forEach(k => { labelKamar.push(k.nama_kamar); dataJumlah.push(daftarMurid.filter(m => m.id_kamar === k.id).length); });
+        daftarKamar.forEach(k => { labelKamar.push(k.nome_kamar || k.nome_kamar); dataJumlah.push(daftarMurid.filter(m => m.id_kamar === k.id).length); });
         const ctx = canvasKamar.getContext('2d'); if (window.myChartKamar) window.myChartKamar.destroy();
         window.myChartKamar = new Chart(ctx, { type: 'bar', data: { labels: labelKamar, datasets: [{ label: 'Jumlah Penghuni', data: dataJumlah, backgroundColor: ['#008f4c','#2ecc71','#ffcc00','#f1c40f','#e67e22','#16a085'], borderRadius: 5 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } } } } });
     } catch (e) { console.error("Grafik Kamar Error:", e); }
@@ -793,7 +774,7 @@ async function exportToExcel(type) {
     try {
         // Ambil semua data master terlebih dahulu untuk mapping
         const [resMurid, resKelas, resKamar] = await Promise.all([
-            fetch(`${BASE_URL}?select=id,nama_murid,id_kelas,id_kamar,desa`, { headers: HEADERS_GET }),
+            fetch(`${BASE_URL}?select=id,nome_murid,id_kelas,id_kamar,desa`, { headers: HEADERS_GET }),
             fetch(URL_KELAS, { headers: HEADERS_GET }),
             fetch(URL_KAMAR, { headers: HEADERS_GET })
         ]);
@@ -803,16 +784,16 @@ async function exportToExcel(type) {
 
         // Buat Lookup Map
         const kelasMap = {};
-        allKelas.forEach(k => kelasMap[k.id] = k.nama_kelas);
+        allKelas.forEach(k => kelasMap[k.id] = k.nome_kelas || k.nama_kelas);
         const kamarMap = {};
-        allKamar.forEach(k => kamarMap[k.id] = k.nama_kamar);
+        allKamar.forEach(k => kamarMap[k.id] = k.nome_kamar || k.nama_kamar);
         const muridMap = {};
         allMurid.forEach(m => muridMap[m.id] = m);
 
         if(type === 'murid') {
             allMurid.forEach(m => {
                 dataToExport.push({
-                    "Nama Murid": m.nama_murid, "NIK": m.nik_murid, "Desa": m.desa,
+                    "Nome Murid": m.nome_murid || m.nama_murid, "Desa": m.desa,
                     "Kelas": kelasMap[m.id_kelas] || '-', "Kamar": kamarMap[m.id_kamar] || '-'
                 });
             });
@@ -831,15 +812,14 @@ async function exportToExcel(type) {
             ringan.forEach(r => {
                 const murid = muridMap[r.id_murid];
                 if(!murid) return;
-                const grupNama = isKamar ? (kamarMap[murid.id_kamar] || '-') : (kelasMap[murid.id_kelas] || '-');
+                const grupNome = isKamar ? (kamarMap[murid.id_kamar] || '-') : (kelasMap[murid.id_kelas] || '-');
                 
-                // Filter: Jika export per kamar, skip yang tidak punya kamar. Begitu juga kelas.
                 if(isKamar && !murid.id_kamar) return;
                 if(!isKamar && !murid.id_kelas) return;
 
                 dataToExport.push({
-                    [`Nama ${isKamar ? 'Kamar' : 'Kelas'}`]: grupNama,
-                    "Nama Murid": murid.nama_murid, "Bulan": r.bulan, "Minggu": r.minggu,
+                    [`Nome ${isKamar ? 'Kamar' : 'Kelas'}`]: grupNome,
+                    "Nome Murid": murid.nome_murid || murid.nama_murid, "Bulan": r.bulan, "Minggu": r.minggu,
                     "Jamaah": r.jamaah, "Batin": r.gerak_batin, "Sekolah": r.sekolah, "Sunnah": r.sholat_sunnah,
                     "Kategori": "Ringan"
                 });
@@ -848,14 +828,14 @@ async function exportToExcel(type) {
             berat.forEach(b => {
                 const murid = muridMap[b.id_murid];
                 if(!murid) return;
-                const grupNama = isKamar ? (kamarMap[murid.id_kamar] || '-') : (kelasMap[murid.id_kelas] || '-');
+                const grupNome = isKamar ? (kamarMap[murid.id_kamar] || '-') : (kelasMap[murid.id_kelas] || '-');
                 
                 if(isKamar && !murid.id_kamar) return;
                 if(!isKamar && !murid.id_kelas) return;
 
                 dataToExport.push({
-                    [`Nama ${isKamar ? 'Kamar' : 'Kelas'}`]: grupNama,
-                    "Nama Murid": murid.nama_murid, "Bulan": b.tgl_kejadian ? new Date(b.tgl_kejadian).getMonth()+1 : '-', "Minggu": "-",
+                    [`Nome ${isKamar ? 'Kamar' : 'Kelas'}`]: grupNome,
+                    "Nome Murid": murid.nome_murid || murid.nama_murid, "Bulan": b.tgl_kejadian ? new Date(b.tgl_kejadian).getMonth()+1 : '-', "Minggu": "-",
                     "Jenis Pelanggaran": b.jenis_pelanggaran, "Poin": b.poin, "Kategori": "Berat"
                 });
             });
@@ -869,7 +849,7 @@ async function exportToExcel(type) {
                 const murid = muridMap[r.id_murid];
                 if(!murid) return;
                 dataToExport.push({
-                    "Nama Murid": murid.nama_murid, "Kelas": kelasMap[murid.id_kelas] || '-', "Kamar": kamarMap[murid.id_kamar] || '-',
+                    "Nome Murid": murid.nome_murid || murid.nama_murid, "Kelas": kelasMap[murid.id_kelas] || '-', "Kamar": kamarMap[murid.id_kamar] || '-',
                     "Bulan": r.bulan, "Minggu": r.minggu, "Jamaah": r.jamaah, "Batin": r.gerak_batin, "Sekolah": r.sekolah, "Sunnah": r.sholat_sunnah
                 });
             });
@@ -882,7 +862,7 @@ async function exportToExcel(type) {
                 const murid = muridMap[i.id_murid];
                 if(!murid) return;
                 dataToExport.push({
-                    "Nama Murid": murid.nama_murid, "Desa": murid.desa, "Alasan": i.alasan, "Status": i.status,
+                    "Nome Murid": murid.nome_murid || murid.nama_murid, "Desa": murid.desa, "Alasan": i.alasan, "Status": i.status,
                     "Tanggal Pulang": i.tgl_pulang ? new Date(i.tgl_pulang).toLocaleString('id-ID') : '-',
                     "Rencana Kembali": i.tgl_kembali_rencana ? new Date(i.tgl_kembali_rencana).toLocaleString('id-ID') : 'Sampai Sembuh',
                     "Estimasi Hari": i.estimasi_hari || '-'
@@ -903,7 +883,6 @@ async function exportToExcel(type) {
     }
 }
 
-// Fungsi Pembungkus Export
 function exportMuridExcel() { exportToExcel('murid'); }
 function exportIzinExcel() { exportToExcel('perizinan'); }
 function exportPelanggaranExcel() {
@@ -959,4 +938,3 @@ document.addEventListener('DOMContentLoaded', () => {
     if (savedUser) { currentUser = JSON.parse(savedUser); initApp(); }
     else { window.location.href = "index.html"; }
 });
-```
