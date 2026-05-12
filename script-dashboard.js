@@ -1,10 +1,3 @@
-Baik, saya akan mengetik ulang **SELURUH kode JavaScript-nya**. 
-
-Untuk di **HTML, Anda TIDAK PERLU merubah apapun**. Karena di HTML sudah ada `onclick="pilihSantriIzin()"` dan `onclick="pilihMuridBerat()"`, saya akan memanfaatkan fungsi tersebut untuk memunculkan pop-up (SweetAlert2) yang berisi filter kelas terlebih dahulu.
-
-Silakan **hapus seluruh isi file `script-dashboard.js`** Anda, lalu *copy-paste* kode di bawah ini secara utuhan:
-
-```javascript
 /* =========================
    KONFIGURASI DASAR & ROLE
 ========================= */
@@ -292,15 +285,35 @@ async function loadPenghuniKamar() {
         data.forEach(m => {
             const isKetua = m.is_ketua_kamar === true;
             const namaTampil = isKetua ? `<span style="color:#d35400; font-weight:bold;">⭐ ${m.nama_murid} (Ketua)</span>` : m.nama_murid;
-            const btnKetua = isKetua ? '' : `<button onclick="jadikanKetuaKamar(${m.id}, ${idKamar})" class="btn-keluarkan" style="border-color:blue;color:blue;"><i class="fas fa-star"></i> Ketua</button> `;
+            
+            let btnAksi = '';
+            if (isKetua) {
+                // Jika dia ketua, tombol yang muncul: Cabut Ketua & Keluarkan
+                btnAksi = `<button onclick="cabutKetuaKamar(${m.id})" class="btn-keluarkan" style="border-color:orange;color:orange;"><i class="fas fa-times-circle"></i> Cabut Ketua</button> `;
+            } else {
+                // Jika bukan ketua, tombol yang muncul: Jadikan Ketua & Keluarkan
+                btnAksi = `<button onclick="jadikanKetuaKamar(${m.id}, ${idKamar})" class="btn-keluarkan" style="border-color:blue;color:blue;"><i class="fas fa-star"></i> Jadikan Ketua</button> `;
+            }
+            btnAksi += `<button onclick="keluarkanDariKamar(${m.id})" class="btn-keluarkan"><i class="fas fa-user-minus"></i> Keluarkan</button>`;
+
             tbody.innerHTML += `
                 <tr class="${isKetua ? 'row-ketua' : ''}">
                     <td>${namaTampil}</td>
                     <td>${m.nik_murid}</td>
-                    <td>${btnKetua}<button onclick="keluarkanDariKamar(${m.id})" class="btn-keluarkan"><i class="fas fa-user-minus"></i> Keluarkan</button></td>
+                    <td>${btnAksi}</td>
                 </tr>`;
         });
     } catch (err) { console.error(err); }
+}
+
+async function cabutKetuaKamar(idMurid) {
+    const confirm = await Swal.fire({ title: 'Cabut Status Ketua?', text: 'Murid ini akan kembali menjadi anggota biasa.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' });
+    if (!confirm.isConfirmed) return;
+    try {
+        await fetch(`${BASE_URL}?id=eq.${idMurid}`, { method: 'PATCH', headers: HEADERS, body: JSON.stringify({ is_ketua_kamar: false }) });
+        Swal.fire('Berhasil!', 'Status ketua kamar telah dicabut.', 'success'); 
+        loadPenghuniKamar();
+    } catch(e) { Swal.fire('Error', 'Gagal mencabut status ketua.', 'error'); }
 }
 
 async function jadikanKetuaKamar(idMurid, idKamar) {
@@ -336,12 +349,29 @@ async function keluarkanDariKamar(id) {
 }
 
 async function tambahNamaKamarMaster() {
-    const { value: namaKamar } = await Swal.fire({ title: 'Tambah Kamar Baru', input: 'text', showCancelButton: true });
+    const { value: namaKamar } = await Swal.fire({ 
+        title: 'Tambah Kamar Baru', 
+        input: 'text', 
+        inputPlaceholder: 'Contoh: Kamar Asy Syafi\'i',
+        showCancelButton: true 
+    });
     if (!namaKamar) return;
     try {
-        await fetch(URL_KAMAR, { method: 'POST', headers: HEADERS, body: JSON.stringify({ nama_kamar: namaKamar }) });
-        Swal.fire('Berhasil', 'Kamar terdaftar', 'success'); refreshDropdownKamar(); refreshDataDisiplin();
-    } catch(e) { Swal.fire('Gagal', '', 'error'); }
+        const res = await fetch(URL_KAMAR, { method: 'POST', headers: HEADERS, body: JSON.stringify({ nama_kamar: namaKamar }) });
+        
+        if (res.ok) {
+            Swal.fire('Berhasil', 'Kamar terdaftar', 'success'); 
+            refreshDropdownKamar(); 
+            refreshDataDisiplin();
+        } else {
+            // Jika gagal, baca pesan error dari Supabase
+            const errData = await res.json();
+            console.error("Supabase Error:", errData);
+            Swal.fire('Gagal Menambah Kamar', `Pesan Error: ${errData.message || 'Cek console browser (F12)'}`, 'error');
+        }
+    } catch(e) { 
+        Swal.fire('Gagal', 'Koneksi database error.', 'error'); 
+    }
 }
 
 /* =========================
