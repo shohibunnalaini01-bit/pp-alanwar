@@ -51,25 +51,21 @@ function loadXLSX() {
 }
 
 /* =========================
-   HELPER: BUAT SEARCHABLE DROPDOWN (Versi Input Text)
-   (Disesuaikan dengan struktur HTML yang pakai input text & hidden)
+   HELPER: BUAT SEARCHABLE DROPDOWN
 ========================= */
 function attachSearchable(textId, hiddenId, placeholder, onSelectedCallback) {
     const textEl = document.getElementById(textId);
     const hiddenEl = document.getElementById(hiddenId);
     if (!textEl || !hiddenEl) return null;
 
-    // Hapus atribut readonly dan onclick bawaan dari HTML agar bisa diketik
     textEl.removeAttribute('readonly');
     textEl.removeAttribute('onclick');
     textEl.placeholder = placeholder || 'Ketik untuk mencari...';
     textEl.autocomplete = 'off';
 
-    // Buat elemen dropdown list
     const dropdownList = document.createElement('div');
     dropdownList.style.cssText = 'position:absolute;top:100%;left:0;right:0;max-height:220px;overflow-y:auto;background:#fff;border:1px solid #ccc;border-top:none;z-index:9999;display:none;box-shadow:0 4px 6px rgba(0,0,0,0.1);';
     
-    // Pastikan parent-nya punya position relative
     textEl.parentElement.style.position = 'relative';
     textEl.parentElement.appendChild(dropdownList);
 
@@ -88,7 +84,7 @@ function attachSearchable(textId, hiddenId, placeholder, onSelectedCallback) {
                 div.style.cssText = 'padding:10px 12px;cursor:pointer;font-size:14px;border-bottom:1px solid #f0f0f0;';
                 div.innerHTML = item.label;
                 div.addEventListener('mousedown', function(e) {
-                    e.preventDefault(); // Cegah blur sebelum klik terbaca
+                    e.preventDefault();
                     textEl.value = item.label;
                     hiddenEl.value = item.value;
                     dropdownList.style.display = 'none';
@@ -107,17 +103,11 @@ function attachSearchable(textId, hiddenId, placeholder, onSelectedCallback) {
     textEl.addEventListener('blur', function() { setTimeout(() => { dropdownList.style.display = 'none'; }, 150); });
 
     return {
-        setItems: function(items) {
-            allItems = items;
-        },
-        clear: function() {
-            textEl.value = '';
-            hiddenEl.value = '';
-        },
+        setItems: function(items) { allItems = items; },
+        clear: function() { textEl.value = ''; hiddenEl.value = ''; },
         getValue: function() { return hiddenEl.value; }
     };
 }
-
 
 /* =========================
    1. NAVIGASI HALAMAN & HP
@@ -199,7 +189,6 @@ document.getElementById('formMurid').addEventListener('submit', async function(e
     e.preventDefault();
     Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     
-    // Diperbaiki: Menyesuaikan ID dari HTML (nome_murid, bukan nama_murid)
     const payload = {
         nama_murid: document.getElementById('nome_murid').value, 
         nik_murid: document.getElementById('nik_murid').value,
@@ -356,7 +345,12 @@ async function loadPenghuniKamar() {
         data.forEach(m => {
             const isKetua = m.is_ketua_kamar === true;
             const namaTampil = isKetua ? `<span style="color:#d35400; font-weight:bold;">⭐ ${m.nama_murid} (Ketua)</span>` : m.nama_murid;
-            const btnKetua = isKetua ? '' : `<button onclick="jadikanKetuaKamar(${m.id}, ${idKamar})" class="btn-keluarkan" style="border-color:blue;color:blue;"><i class="fas fa-star"></i> Ketua</button> `;
+
+            // FIX #1: Tampilkan tombol "Cabut Ketua" jika sudah ketua, tombol "Jadikan Ketua" jika belum
+            const btnKetua = isKetua
+                ? `<button onclick="cabutKetuaKamar(${m.id})" class="btn-keluarkan" style="border-color:orange;color:orange;"><i class="fas fa-star-half-alt"></i> Cabut Ketua</button> `
+                : `<button onclick="jadikanKetuaKamar(${m.id}, ${idKamar})" class="btn-keluarkan" style="border-color:blue;color:blue;"><i class="fas fa-star"></i> Ketua</button> `;
+
             tbody.innerHTML += `
                 <tr class="${isKetua ? 'row-ketua' : ''}">
                     <td>${namaTampil}</td>
@@ -409,28 +403,37 @@ async function keluarkanDariKamar(id) {
     Swal.fire('Berhasil!', 'Santri dikeluarkan.', 'success'); loadPenghuniKamar();
 }
 
-async function tambahNamaKamarMaster() {
+// FIX: Ganti "tambahNamaKamarMaster" menjadi "tambahNomeKamarMaster" agar cocok dengan HTML
+async function tambahNomeKamarMaster() {
     const { value: namaKamar } = await Swal.fire({ 
         title: 'Tambah Kamar Baru', 
         input: 'text', 
-        inputPlaceholder: 'Contoh: Kamar Asy Syafi\'i',
+        inputPlaceholder: 'Contoh: Kamar Asy Syafii',
+        inputValidator: (value) => {
+            if (!value || !value.trim()) {
+                return 'Nama kamar tidak boleh kosong!';
+            }
+        },
         showCancelButton: true 
     });
-    if (!namaKamar) return;
+    if (!namaKamar || !namaKamar.trim()) return;
+
+    Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
     try {
-        const res = await fetch(URL_KAMAR, { method: 'POST', headers: HEADERS, body: JSON.stringify({ nama_kamar: namaKamar }) });
+        const res = await fetch(URL_KAMAR, { method: 'POST', headers: HEADERS, body: JSON.stringify({ nama_kamar: namaKamar.trim() }) });
         
         if (res.ok) {
             Swal.fire('Berhasil', 'Kamar terdaftar', 'success'); 
             refreshDropdownKamar(); 
             refreshDataDisiplin();
         } else {
-            // Jika gagal, baca pesan error dari Supabase
             const errData = await res.json();
             console.error("Supabase Error:", errData);
-            Swal.fire('Gagal Menambah Kamar', `Pesan Error: ${errData.message || 'Cek console browser (F12)'}`, 'error');
+            Swal.fire('Gagal Menambah Kamar', errData.message || 'Cek console browser (F12) untuk detail.', 'error');
         }
     } catch(e) { 
+        console.error("Catch Error:", e);
         Swal.fire('Gagal', 'Koneksi database error.', 'error'); 
     }
 }
@@ -668,8 +671,6 @@ async function isiDropdownMuridBerat() {
 
 async function simpanPelanggaranBerat() {
     const id_murid = searchBeratObj ? searchBeratObj.getValue() : '';
-    
-    // Diperbaiki: Menggunakan ID dari HTML (nome-pelanggaran-berat)
     const jenis_pelanggaran = document.getElementById('nome-pelanggaran-berat').value;
     const poin = document.getElementById('poin-berat').value;
     
@@ -782,7 +783,7 @@ async function inisialisasiGrafikKamar() {
 }
 
 /* =========================
-   8. EXPORT EXCEL (DIPERBAIKI)
+   8. EXPORT EXCEL
 ========================= */
 async function exportToExcel(type) {
     try {
@@ -865,11 +866,9 @@ async function exportToExcel(type) {
     }
 }
 
-// Diperbaiki: Menambahkan fungsi pembungkus agar sesuai dengan onclick di HTML
 function exportMuridExcel() { exportToExcel('murid'); }
 function exportIzinExcel() { exportToExcel('perizinan'); }
 function exportPelanggaranExcel() {
-    // Menambahkan opsi pilihan ketika tombol Export Rekap di klik
     Swal.fire({
         title: 'Pilih Jenis Export Pelanggaran',
         input: 'select',
@@ -883,15 +882,11 @@ function exportPelanggaranExcel() {
         confirmButtonText: 'Export',
         confirmButtonColor: '#008f4c',
         preConfirm: (value) => {
-            if (!value) {
-                Swal.showValidationMessage('Anda harus memilih jenis laporan!');
-            }
+            if (!value) { Swal.showValidationMessage('Anda harus memilih jenis laporan!'); }
             return value;
         }
     }).then((result) => {
-        if (result.isConfirmed) {
-            exportToExcel(result.value);
-        }
+        if (result.isConfirmed) { exportToExcel(result.value); }
     });
 }
 
