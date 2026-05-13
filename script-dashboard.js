@@ -22,6 +22,7 @@ const HEADERS_GET = {
 
 window.allDataMurid = [];
 let menuAktifDisiplin = 'kelas';
+let editingMuridId = null; // Variabel penanda mode Edit
 
 const POIN_JAMAAH = 1;
 const POIN_BATIN = 1;
@@ -141,8 +142,17 @@ function toggleSidebar() {
 
 function toggleModal(show) {
     const modal = document.getElementById('modalMurid');
-    if (show) modal.style.display = 'block';
-    else { modal.style.display = 'none'; document.getElementById('formMurid').reset(); }
+    if (show) {
+        modal.style.display = 'block';
+    } else { 
+        modal.style.display = 'none'; 
+        document.getElementById('formMurid').reset(); 
+        editingMuridId = null; // Reset mode edit saat modal ditutup
+        
+        // Kembalikan judul modal ke mode Tambah
+        const modalTitle = modal.querySelector('h2') || modal.querySelector('h3');
+        if (modalTitle) modalTitle.innerText = 'Tambah Data Santri';
+    }
 }
 
 /* =========================
@@ -167,24 +177,72 @@ function renderTable(data) {
     tbody.innerHTML = '';
     if (data.length === 0) { tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Data tidak ditemukan</td></tr>`; return; }
     data.forEach(m => {
+        const safeName = (m.nama_murid || '').replace(/'/g, "\\'"); // Mencegah error tanda kutip pada onclick
         tbody.innerHTML += `
             <tr>
                 <td style="cursor:pointer;color:#00703c;font-weight:bold;" onclick="lihatDetail(${m.id})">${m.nama_murid || '-'}</td>
                 <td>${m.nik_murid || '-'}</td>
                 <td>${m.desa || '-'}</td>
                 <td>
-                    <button onclick="lihatDetail(${m.id})" style="color:blue;border:none;background:none;cursor:pointer;"><i class="fas fa-eye"></i></button>
-                    <button onclick="hapusData(${m.id}, '${m.nama_murid}')" style="color:red;border:none;background:none;cursor:pointer;"><i class="fas fa-trash"></i></button>
+                    <button onclick="editData(${m.id})" style="color:orange;border:none;background:none;cursor:pointer;font-size:16px;" title="Edit Data"><i class="fas fa-edit"></i></button>
+                    <button onclick="hapusData(${m.id}, '${safeName}')" style="color:red;border:none;background:none;cursor:pointer;font-size:16px;" title="Hapus Data"><i class="fas fa-trash"></i></button>
                 </td>
             </tr>`;
     });
 }
 
 function searchData() {
-    const keyword = document.getElementById('inputCari').value.toLowerCase();
-    renderTable(window.allDataMurid.filter(m => m.nama_murid.toLowerCase().includes(keyword) || m.nik_murid.includes(keyword)));
+    const inputCari = document.getElementById('inputCari');
+    if (!inputCari) return;
+    
+    const keyword = inputCari.value.toLowerCase();
+    
+    // Jika kolom pencarian dikosongkan, tampilkan semua data
+    if (!keyword) {
+        renderTable(window.allDataMurid);
+        return;
+    }
+    
+    // Filter data dengan aman (mencegah error null)
+    const filtered = window.allDataMurid.filter(m => {
+        const nama = (m.nama_murid || '').toLowerCase();
+        const nik = (m.nik_murid || '').toLowerCase();
+        return nama.includes(keyword) || nik.includes(keyword);
+    });
+    
+    renderTable(filtered);
 }
 
+// FITUR BARU: Fungsi Edit Data
+function editData(id) {
+    const m = window.allDataMurid.find(item => item.id === id);
+    if (!m) return;
+    
+    editingMuridId = id; // Aktifkan mode edit
+    
+    // Isi form dengan data lama
+    document.getElementById('nome_murid').value = m.nama_murid || '';
+    document.getElementById('nik_murid').value = m.nik_murid || '';
+    document.getElementById('no_kk').value = m.no_kk || '';
+    document.getElementById('nome_ayah').value = m.nama_ayah || '';
+    document.getElementById('nik_ayah').value = m.nik_ayah || '';
+    document.getElementById('nome_ibu').value = m.nama_ibu || '';
+    document.getElementById('nik_ibu').value = m.nik_ibu || '';
+    document.getElementById('dusun').value = m.dusun || '';
+    document.getElementById('desa').value = m.desa || '';
+    document.getElementById('kecamatan').value = m.kecamatan || '';
+    document.getElementById('kabupaten').value = m.kabupaten || '';
+    document.getElementById('provinsi').value = m.provinsi || '';
+
+    // Ubah judul modal menjadi mode Edit
+    const modal = document.getElementById('modalMurid');
+    const modalTitle = modal.querySelector('h2') || modal.querySelector('h3');
+    if (modalTitle) modalTitle.innerText = 'Edit Data Santri';
+
+    toggleModal(true); // Buka modal
+}
+
+// UPGRADE: Form Submit mendukung Tambah & Edit
 document.getElementById('formMurid').addEventListener('submit', async function(e) {
     e.preventDefault();
     Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
@@ -203,20 +261,74 @@ document.getElementById('formMurid').addEventListener('submit', async function(e
         kabupaten: document.getElementById('kabupaten').value, 
         provinsi: document.getElementById('provinsi').value
     };
+
     try {
-        const response = await fetch(BASE_URL, { method: 'POST', headers: {...HEADERS, 'Prefer': 'return=representation'}, body: JSON.stringify(payload) });
-        if (response.ok) { Swal.fire('Berhasil!', 'Data murid berhasil ditambahkan.', 'success'); toggleModal(false); loadDataMurid(); }
-        else { Swal.fire('Gagal!', 'Tidak bisa menyimpan data.', 'error'); }
-    } catch (err) { Swal.fire('Error', 'Koneksi database gagal.', 'error'); }
+        let response;
+        if (editingMuridId) {
+            // MODE EDIT (PATCH)
+            response = await fetch(`${BASE_URL}?id=eq.${editingMuridId}`, { 
+                method: 'PATCH', 
+                headers: HEADERS, 
+                body: JSON.stringify(payload) 
+            });
+        } else {
+            // MODE TAMBAH BARU (POST)
+            response = await fetch(BASE_URL, { 
+                method: 'POST', 
+                headers: {...HEADERS, 'Prefer': 'return=representation'}, 
+                body: JSON.stringify(payload) 
+            });
+        }
+
+        if (response.ok) { 
+            Swal.fire('Berhasil!', editingMuridId ? 'Data santri berhasil diperbarui.' : 'Data murid berhasil ditambahkan.', 'success'); 
+            toggleModal(false); // Tutup modal & reset editingMuridId
+            loadDataMurid(); 
+        } else {
+            const errData = await response.json();
+            Swal.fire('Gagal!', errData.message || 'Tidak bisa menyimpan data.', 'error'); 
+        }
+    } catch (err) { 
+        Swal.fire('Error', 'Koneksi database gagal.', 'error'); 
+    }
 });
 
+// UPGRADE: Hapus Data dengan Deteksi Foreign Key Constraint
 async function hapusData(id, nama) {
-    const confirm = await Swal.fire({ title: 'Hapus Data?', text: `Yakin ingin menghapus ${nama}?`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' });
+    const confirm = await Swal.fire({ 
+        title: 'Hapus Data?', 
+        html: `Yakin ingin menghapus <b>${nama}</b>?<br><small style="color:red;">Perhatian: Penghapusan akan ditolak sistem jika santri masih memiliki riwayat izin/pelanggaran.</small>`, 
+        icon: 'warning', 
+        showCancelButton: true, 
+        confirmButtonColor: '#d33',
+        confirmButtonText: 'Ya, Hapus!'
+    });
     if (!confirm.isConfirmed) return;
+
+    Swal.fire({ title: 'Menghapus...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
     try {
         const res = await fetch(`${BASE_URL}?id=eq.${id}`, { method: 'DELETE', headers: HEADERS_GET });
-        if (res.ok) { Swal.fire('Berhasil!', 'Data berhasil dihapus.', 'success'); loadDataMurid(); }
-    } catch (err) { Swal.fire('Error', 'Masalah koneksi.', 'error'); }
+        Swal.close();
+        
+        if (res.ok) { 
+            Swal.fire('Berhasil!', 'Data berhasil dihapus.', 'success'); 
+            loadDataMurid(); 
+        } else {
+            const errData = await res.json();
+            console.error("Supabase Delete Error:", errData);
+            
+            let errorMsg = "Gagal menghapus data.";
+            // Deteksi jika error disebabkan karena data masih terhubung dengan tabel lain (Foreign Key)
+            if (errData.message && errData.message.includes("violates foreign key constraint")) {
+                errorMsg = "Gagal menghapus: Santri ini masih memiliki riwayat Perizinan, Pelanggaran, atau Rekap di database. Hapus data terkait terlebih dahulu.";
+            }
+            
+            Swal.fire('Tidak Bisa Dihapus', errorMsg, 'error');
+        }
+    } catch (err) { 
+        Swal.fire('Error', 'Masalah koneksi.', 'error'); 
+    }
 }
 
 async function lihatDetail(id) {
@@ -346,7 +458,6 @@ async function loadPenghuniKamar() {
             const isKetua = m.is_ketua_kamar === true;
             const namaTampil = isKetua ? `<span style="color:#d35400; font-weight:bold;">⭐ ${m.nama_murid} (Ketua)</span>` : m.nama_murid;
 
-            // FIX #1: Tampilkan tombol "Cabut Ketua" jika sudah ketua, tombol "Jadikan Ketua" jika belum
             const btnKetua = isKetua
                 ? `<button onclick="cabutKetuaKamar(${m.id})" class="btn-keluarkan" style="border-color:orange;color:orange;"><i class="fas fa-star-half-alt"></i> Cabut Ketua</button> `
                 : `<button onclick="jadikanKetuaKamar(${m.id}, ${idKamar})" class="btn-keluarkan" style="border-color:blue;color:blue;"><i class="fas fa-star"></i> Ketua</button> `;
@@ -403,7 +514,6 @@ async function keluarkanDariKamar(id) {
     Swal.fire('Berhasil!', 'Santri dikeluarkan.', 'success'); loadPenghuniKamar();
 }
 
-// FIX: Ganti "tambahNamaKamarMaster" menjadi "tambahNomeKamarMaster" agar cocok dengan HTML
 async function tambahNomeKamarMaster() {
     const { value: namaKamar } = await Swal.fire({ 
         title: 'Tambah Kamar Baru', 
